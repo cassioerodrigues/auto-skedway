@@ -31,7 +31,7 @@ def _job_listener(event):
 
 def _execute_job(account_id: str):
     """Run a booking job for an account (called by scheduler or manually)."""
-    print(f"[scheduler] Job triggered for account: {account_id}")
+    logger.info(f"Job triggered for account: {account_id}")
     if account_id in _active_runs:
         logger.warning(f"Account {account_id} is already running — skipping")
         return
@@ -110,20 +110,20 @@ def init_scheduler() -> BackgroundScheduler:
         return _scheduler
 
     _scheduler = BackgroundScheduler(
-        job_defaults={"coalesce": True, "max_instances": 1}
+        timezone="America/Sao_Paulo",
+        job_defaults={"coalesce": True, "max_instances": 1, "misfire_grace_time": 60}
     )
     _scheduler.add_listener(_job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_MISSED)
 
     _load_all_jobs()
     _scheduler.start()
 
-    # Log next run times for debugging (print to guarantee stdout)
+    # Log next run times for debugging
     jobs = _scheduler.get_jobs()
-    print(f"[scheduler] Started with {len(jobs)} jobs:")
+    logger.info(f"Scheduler started with {len(jobs)} jobs:")
     for job in jobs:
-        print(f"[scheduler]   → {job.name} | next run: {job.next_run_time}")
+        logger.info(f"  \u2192 {job.name} | next run: {job.next_run_time}")
 
-    logger.info("Scheduler started")
     return _scheduler
 
 
@@ -154,8 +154,7 @@ def _load_all_jobs():
                     name=f"{account.get('label', account['id'])} - {schedule.get('description', schedule['cron'])}",
                 )
                 job_count += 1
-                print(f"[scheduler] Loaded job {job_id}: {schedule['cron']} (tz={tz})")
-                logger.info(f"Scheduled job {job_id}: {schedule['cron']}")
+                logger.info(f"Loaded job {job_id}: {schedule['cron']} (tz={tz})")
             except Exception as e:
                 logger.error(f"Failed to schedule job for {account['id']}/{schedule['id']}: {e}")
 
@@ -168,6 +167,8 @@ def reload_jobs():
         return
     _scheduler.remove_all_jobs()
     _load_all_jobs()
+    for job in _scheduler.get_jobs():
+        logger.info(f"  \u2192 {job.name} | next run: {job.next_run_time}")
     logger.info("Scheduler jobs reloaded")
 
 

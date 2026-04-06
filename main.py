@@ -9,11 +9,14 @@ Usage:
 """
 
 import argparse
+import logging
 import os
 import sys
 
 # Ensure project root is in path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+logger = logging.getLogger("auto-skedway.main")
 
 
 def parse_args():
@@ -34,6 +37,13 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    # Configure logging early
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s] [%(levelname)-8s] [%(name)-12s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
     # Single-run mode: execute one account and exit
     if args.run_once:
@@ -60,12 +70,12 @@ def main():
     os.makedirs(logs_dir, exist_ok=True)
 
     # Start scheduler
-    print("[main] Initializing scheduler...")
+    logger.info("Initializing scheduler...")
     init_scheduler()
-    print("[main] Scheduler initialized")
+    logger.info("Scheduler initialized")
 
     try:
-        print(f"[main] Starting Auto Skedway on http://{args.host}:{args.port}")
+        logger.info(f"Starting Auto Skedway on http://{args.host}:{args.port}")
         app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
     finally:
         shutdown_scheduler()
