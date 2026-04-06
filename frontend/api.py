@@ -43,6 +43,9 @@ app.wsgi_app = ProxyFix(
     x_prefix=1    # Trust X-Forwarded-Prefix (for /skedway/ path)
 )
 
+# Support both / and /skedway/ paths for nginx deployment
+SUBPATH = "/skedway"
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -414,6 +417,101 @@ def health_check():
         "logs_dir": str(LOGS_DIR),
         "logs_dir_exists": LOGS_DIR.exists(),
     })
+
+
+# ========================================
+# Support for /skedway/ subpath (nginx deployment)
+# ========================================
+
+# Redirect /skedway routes back to root routes
+@app.route("/skedway/", methods=["GET"])
+def skedway_index():
+    return index()
+
+
+@app.route("/skedway/<path:filename>", methods=["GET"])
+def skedway_static_files(filename):
+    return static_files(filename)
+
+
+@app.route("/skedway/api/executions", methods=["GET"])
+def skedway_get_executions():
+    return get_executions()
+
+
+@app.route("/skedway/api/executions/<timestamp>", methods=["GET"])
+def skedway_get_execution_details(timestamp):
+    return get_execution_details(timestamp)
+
+
+@app.route("/skedway/api/executions/<timestamp>/screenshots/<filename>", methods=["GET"])
+def skedway_get_screenshot(timestamp, filename):
+    return get_screenshot(timestamp, filename)
+
+
+@app.route("/skedway/api/executions/<timestamp>", methods=["DELETE"])
+def skedway_delete_execution(timestamp):
+    return delete_execution(timestamp)
+
+
+@app.route("/skedway/api/accounts", methods=["GET"])
+def skedway_list_accounts():
+    return list_accounts()
+
+
+@app.route("/skedway/api/accounts", methods=["POST"])
+def skedway_create_account():
+    return create_account()
+
+
+@app.route("/skedway/api/accounts/<account_id>", methods=["GET"])
+def skedway_get_account(account_id):
+    return get_account(account_id)
+
+
+@app.route("/skedway/api/accounts/<account_id>", methods=["PUT"])
+def skedway_update_account(account_id):
+    return update_account(account_id)
+
+
+@app.route("/skedway/api/accounts/<account_id>", methods=["DELETE"])
+def skedway_delete_account(account_id):
+    return delete_account(account_id)
+
+
+@app.route("/skedway/api/accounts/<account_id>/schedules", methods=["GET"])
+def skedway_get_schedules(account_id):
+    return get_schedules(account_id)
+
+
+@app.route("/skedway/api/accounts/<account_id>/schedules", methods=["POST"])
+def skedway_add_schedule(account_id):
+    return add_schedule(account_id)
+
+
+@app.route("/skedway/api/accounts/<account_id>/schedules/<schedule_id>", methods=["PUT"])
+def skedway_update_schedule(account_id, schedule_id):
+    return update_schedule(account_id, schedule_id)
+
+
+@app.route("/skedway/api/accounts/<account_id>/schedules/<schedule_id>", methods=["DELETE"])
+def skedway_delete_schedule(account_id, schedule_id):
+    return delete_schedule(account_id, schedule_id)
+
+
+@app.route("/skedway/api/accounts/<account_id>/run", methods=["POST"])
+def skedway_trigger_run(account_id):
+    return run_account(account_id)
+
+
+@app.route("/skedway/api/status", methods=["GET"])
+def skedway_get_status():
+    return get_status()
+
+
+@app.route("/skedway/api/health", methods=["GET"])
+def skedway_health_check():
+    return health_check()
 
 
 # ========================================
