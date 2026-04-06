@@ -105,19 +105,9 @@ function getStatusBadge(result) {
 function formatNextRun(isoString) {
   if (!isoString) return '-';
   const dt = new Date(isoString);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const runDate = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-  
-  let dayLabel = 'em algum dia';
-  if (runDate.getTime() === today.getTime()) dayLabel = 'hoje';
-  else if (runDate.getTime() === tomorrow.getTime()) dayLabel = 'amanhã';
-  else dayLabel = dt.toLocaleDateString('pt-BR');
-  
+  const dateStr = dt.toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' });
   const timeStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  return `${dayLabel} ${timeStr}`;
+  return `${dateStr} ${timeStr}`;
 }
 
 function populateAccountFilter(accounts) {
@@ -148,7 +138,7 @@ function renderAccountStatusCards(accounts) {
         <div class="account-card__info">
           <span>Mesas: ${(a.preferences?.desks || []).join(', ') || '-'}</span>
           <span>Credenciais: ${a.has_credentials ? '✓' : '✗'}</span>
-          <span>Próx. agend.: ${formatNextRun(a.next_run)}</span>
+          <span>Próximo agendamento: ${formatNextRun(a.next_run)}</span>
         </div>
         <button class="btn btn--sm ${running ? 'btn--loading' : 'btn--accent'}" 
                 onclick="handleRunNow('${a.id}')" ${running || !a.enabled ? 'disabled' : ''}>
