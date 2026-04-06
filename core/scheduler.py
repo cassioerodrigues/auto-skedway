@@ -119,9 +119,13 @@ def _load_all_jobs():
             try:
                 cron_kwargs = _parse_cron(schedule["cron"])
                 job_id = f"{account['id']}_{schedule['id']}"
+                # Use account timezone if available, fallback to America/Sao_Paulo
+                tz = account.get("preferences", {}).get("site_params", {}).get(
+                    "timezone", "America/Sao_Paulo"
+                )
                 _scheduler.add_job(
                     _execute_job,
-                    trigger=CronTrigger(**cron_kwargs),
+                    trigger=CronTrigger(timezone=tz, **cron_kwargs),
                     args=[account["id"]],
                     id=job_id,
                     replace_existing=True,
