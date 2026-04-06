@@ -262,7 +262,7 @@ async function showExecutionDetails(execution) {
     sc.innerHTML = '<p class="empty-hint">No screenshots available</p>';
   } else {
     sc.innerHTML = details.screenshot_files.map((f) => {
-      const url = `/api/executions/${execution.timestamp}/screenshots/${f}`;
+      const url = (window.API_PREFIX || '') + `/api/executions/${execution.timestamp}/screenshots/${f}`;
       return `<div class="screenshot-item" onclick="openScreenshotModal('${url}','${f}')"><img src="${url}" alt="${f}" loading="lazy" /><div class="screenshot-item__label">${f}</div></div>`;
     }).join('');
   }
