@@ -82,7 +82,7 @@ async function loadDashboard() {
 }
 
 function formatDate(isoString) {
-  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(isoString));
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(isoString));
 }
 
 function formatDuration(seconds) {
@@ -107,15 +107,15 @@ function getStatusBadge(result) {
 function formatNextRun(isoString) {
   if (!isoString) return '-';
   const dt = new Date(isoString);
-  const dateStr = dt.toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  const timeStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = dt.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   return `${dateStr} ${timeStr}`;
 }
 
 function populateAccountFilter(accounts) {
   const sel = $('accountFilter');
   const val = sel.value;
-  sel.innerHTML = '<option value="">Todas as Contas</option>';
+  sel.innerHTML = '<option value="">All Accounts</option>';
   accounts.forEach((a) => {
     sel.innerHTML += `<option value="${a.id}">${a.label}</option>`;
   });
@@ -125,7 +125,7 @@ function populateAccountFilter(accounts) {
 function renderAccountStatusCards(accounts) {
   const container = $('accountStatusCards');
   if (!accounts.length) {
-    container.innerHTML = '<p class="empty-hint">Nenhuma conta configurada. Vá para a aba Contas para adicionar.</p>';
+    container.innerHTML = '<p class="empty-hint">No accounts configured. Go to Accounts tab to add one.</p>';
     return;
   }
   container.innerHTML = accounts.map((a) => {
@@ -135,16 +135,16 @@ function renderAccountStatusCards(accounts) {
       <div class="account-card account-card--${statusCls}">
         <div class="account-card__header">
           <span class="account-card__label">${a.label}</span>
-          <span class="badge badge--${a.enabled ? 'success' : 'warning'}">${a.enabled ? 'Ativa' : 'Inativa'}</span>
+          <span class="badge badge--${a.enabled ? 'success' : 'warning'}">${a.enabled ? 'Active' : 'Inactive'}</span>
         </div>
         <div class="account-card__info">
-          <span>Mesas: ${(a.preferences?.desks || []).join(', ') || '-'}</span>
-          <span>Credenciais: ${a.has_credentials ? '✓' : '✗'}</span>
-          <span>Próximo agendamento: ${formatNextRun(a.next_run)}</span>
+          <span>Desks: ${(a.preferences?.desks || []).join(', ') || '-'}</span>
+          <span>Credentials: ${a.has_credentials ? '✓' : '✗'}</span>
+          <span>Next Run: ${formatNextRun(a.next_run)}</span>
         </div>
         <button class="btn btn--sm ${running ? 'btn--loading' : 'btn--accent'}" 
                 onclick="handleRunNow('${a.id}')" ${running || !a.enabled ? 'disabled' : ''}>
-          ${running ? '<span class="loading__spinner loading__spinner--sm"></span> Executando...' : '▶ Executar Agora'}
+          ${running ? '<span class="loading__spinner loading__spinner--sm"></span> Running...' : '▶ Run Now'}
         </button>
       </div>
     `;
@@ -154,7 +154,7 @@ function renderAccountStatusCards(accounts) {
 function renderExecutions(executions) {
   const list = $('executionsList');
   if (!executions.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">📋</div><div class="empty-state__title">Nenhuma Execução</div></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">📋</div><div class="empty-state__title">No Executions</div></div>`;
     updateStats([]);
     return;
   }
@@ -174,18 +174,18 @@ function renderExecutions(executions) {
           ${getStatusBadge(e.result)}
         </div>
         <div class="execution-card__details">
-          <div class="execution-detail"><div class="execution-detail__label">Data Alvo</div><div class="execution-detail__value">${e.target_date || '-'}</div></div>
-          <div class="execution-detail"><div class="execution-detail__label">Mesa</div><div class="execution-detail__value">${e.booked_desk || '-'}</div></div>
-          <div class="execution-detail"><div class="execution-detail__label">Duração</div><div class="execution-detail__value">${formatDuration(e.duration_seconds)}</div></div>
+          <div class="execution-detail"><div class="execution-detail__label">Target Date</div><div class="execution-detail__value">${e.target_date || '-'}</div></div>
+          <div class="execution-detail"><div class="execution-detail__label">Desk</div><div class="execution-detail__value">${e.booked_desk || '-'}</div></div>
+          <div class="execution-detail"><div class="execution-detail__label">Duration</div><div class="execution-detail__value">${formatDuration(e.duration_seconds)}</div></div>
           <div class="execution-detail"><div class="execution-detail__label">Screenshots</div><div class="execution-detail__value">${e.screenshots || 0}</div></div>
         </div>
         <div class="execution-card__footer">
           <div class="execution-card__screenshot-count">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
-            ${e.screenshots || 0} imagens
+            ${e.screenshots || 0} images
           </div>
           <div class="execution-card__actions">
-            <button class="btn btn--xs btn--danger" onclick="event.stopPropagation(); handleDeleteExecution('${e.timestamp}')" title="Excluir">🗑</button>
+            <button class="btn btn--xs btn--danger" onclick="event.stopPropagation(); handleDeleteExecution('${e.timestamp}')" title="Delete">🗑</button>
             <div class="execution-card__arrow">→</div>
           </div>
         </div>
@@ -198,7 +198,7 @@ function updateStats(executions) {
   $('totalExecutions').textContent = executions.length;
   $('successCount').textContent = executions.filter((e) => ['dry_run_success', 'success'].includes(e.result)).length;
   $('failureCount').textContent = executions.filter((e) => ['login_failed', 'failure', 'error', 'timeout'].includes(e.result)).length;
-  $('loadingStatus').textContent = '✓ Carregado';
+  $('loadingStatus').textContent = '✓ Loaded';
 }
 
 async function handleRunNow(accountId) {
@@ -242,7 +242,7 @@ async function showExecutionDetails(execution) {
   const details = await fetchExecutionDetails(execution.timestamp);
   if (!details) return;
 
-  $('modalTitle').textContent = `Execução de ${formatDate(execution.execution_time)}`;
+  $('modalTitle').textContent = `Execution from ${formatDate(execution.execution_time)}`;
 
   const rc = ['dry_run_success', 'success'].includes(execution.result) ? 'summary-item__value--success'
     : ['login_failed', 'failure', 'error'].includes(execution.result) ? 'summary-item__value--error' : 'summary-item__value--warning';
@@ -252,14 +252,14 @@ async function showExecutionDetails(execution) {
     <div class="summary-item"><div class="summary-item__label">Conta</div><div class="summary-item__value">${execution.account_id || '-'}</div></div>
     <div class="summary-item"><div class="summary-item__label">Data Alvo</div><div class="summary-item__value">${execution.target_date || '-'}</div></div>
     <div class="summary-item"><div class="summary-item__label">Mesa Agendada</div><div class="summary-item__value">${execution.booked_desk || '-'}</div></div>
-    <div class="summary-item"><div class="summary-item__label">Mesas Tentadas</div><div class="summary-item__value">${(execution.desks_attempted || []).join(', ') || '-'}</div></div>
-    <div class="summary-item"><div class="summary-item__label">Duração</div><div class="summary-item__value">${formatDuration(execution.duration_seconds)}</div></div>
+    <div class="summary-item"><div class="summary-item__label">Desks Attempted</div><div class="summary-item__value">${(execution.desks_attempted || []).join(', ') || '-'}</div></div>
+    <div class="summary-item"><div class="summary-item__label">Duration</div><div class="summary-item__value">${formatDuration(execution.duration_seconds)}</div></div>
   `;
 
   // Screenshots
   const sc = $('screenshotsContainer');
   if (!details.screenshot_files?.length) {
-    sc.innerHTML = '<p class="empty-hint">Nenhuma screenshot disponível</p>';
+    sc.innerHTML = '<p class="empty-hint">No screenshots available</p>';
   } else {
     sc.innerHTML = details.screenshot_files.map((f) => {
       const url = `/api/executions/${execution.timestamp}/screenshots/${f}`;
@@ -267,7 +267,7 @@ async function showExecutionDetails(execution) {
     }).join('');
   }
 
-  $('executionLog').textContent = details.execution_log || 'Log não disponível';
+  $('executionLog').textContent = details.execution_log || 'Log not available';
   $('summaryJson').textContent = JSON.stringify(execution, null, 2);
 
   $('detailsModal').classList.add('active');
@@ -309,25 +309,25 @@ function closeModal(modalId) {
 async function confirmDeleteExecution() {
   if (!state.selectedExecution) return;
   const ts = state.selectedExecution.timestamp;
-  if (!confirm(`Deseja excluir esta execução e todos os screenshots?\n\n${ts}`)) return;
+  if (!confirm(`Delete this execution and all screenshots?\n\n${ts}`)) return;
   try {
     await deleteExecution(ts);
     closeModal('detailsModal');
     state.executions = await fetchExecutions();
     renderExecutions(state.executions);
   } catch (e) {
-    alert(`Erro ao excluir: ${e.message}`);
+    alert(`Error deleting: ${e.message}`);
   }
 }
 
 async function handleDeleteExecution(ts) {
-  if (!confirm(`Deseja excluir esta execução e todos os screenshots?\n\n${ts}`)) return;
+  if (!confirm(`Delete this execution and all screenshots?\n\n${ts}`)) return;
   try {
     await deleteExecution(ts);
     state.executions = await fetchExecutions();
     renderExecutions(state.executions);
   } catch (e) {
-    alert(`Erro ao excluir: ${e.message}`);
+    alert(`Error deleting: ${e.message}`);
   }
 }
 
@@ -347,7 +347,7 @@ async function loadAccountsList() {
 function renderAccountsList(accounts) {
   const list = $('accountsList');
   if (!accounts.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">👤</div><div class="empty-state__title">Nenhuma Conta</div><div class="empty-state__text">Clique em "Nova Conta" para adicionar</div></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">👤</div><div class="empty-state__title">No Accounts</div><div class="empty-state__text">Click "New Account" to add one</div></div>`;
     return;
   }
   list.innerHTML = accounts.map((a) => `
@@ -359,29 +359,29 @@ function renderAccountsList(accounts) {
         </div>
         <div class="account-item__meta">
           <span>ID: <code>${a.id}</code></span>
-          <span>Mesas: ${(a.preferences?.desks || []).join(', ') || '-'}</span>
-          <span>Horário: ${a.preferences?.start_time || '08:30'} - ${a.preferences?.end_time || '17:00'}</span>
-          <span>Dias à frente: ${a.preferences?.days_ahead ?? 7}</span>
-          <span>Credenciais: ${a.has_credentials ? '✓ Configuradas' : '✗ Não configuradas'}</span>
+          <span>Desks: ${(a.preferences?.desks || []).join(', ') || '-'}</span>
+          <span>Time: ${a.preferences?.start_time || '08:30'} - ${a.preferences?.end_time || '17:00'}</span>
+          <span>Days Ahead: ${a.preferences?.days_ahead ?? 7}</span>
+          <span>Credentials: ${a.has_credentials ? '✓ Configured' : '✗ Not configured'}</span>
         </div>
         <div class="account-item__schedules">
           ${(a.schedules || []).map((s) => `
             <span class="schedule-tag ${s.enabled ? '' : 'schedule-tag--disabled'}">
               <code>${s.cron}</code> ${s.description ? `— ${s.description}` : ''}
             </span>
-          `).join('') || '<span class="empty-hint">Sem agendamentos</span>'}
+          `).join('') || '<span class="empty-hint">No schedules</span>'})
         </div>
       </div>
       <div class="account-item__actions">
-        <button class="btn btn--sm btn--ghost" onclick="editAccount('${a.id}')">Editar</button>
-        <button class="btn btn--sm btn--danger" onclick="confirmDeleteAccount('${a.id}', '${a.label}')">Excluir</button>
+        <button class="btn btn--sm btn--ghost" onclick="editAccount('${a.id}')">Edit</button>
+        <button class="btn btn--sm btn--danger" onclick="confirmDeleteAccount('${a.id}', '${a.label}')">Delete</button>
       </div>
     </div>
   `).join('');
 }
 
 function showAccountModal(account = null) {
-  $('accountModalTitle').textContent = account ? 'Editar Conta' : 'Nova Conta';
+  $('accountModalTitle').textContent = account ? 'Edit Account' : 'New Account';
   $('accountFormId').value = account?.id || '';
   $('accountLabel').value = account?.label || '';
   $('accountUser').value = '';
@@ -402,13 +402,13 @@ async function editAccount(id) {
 }
 
 async function confirmDeleteAccount(id, label) {
-  if (confirm(`Tem certeza que deseja excluir a conta "${label}"?`)) {
+  if (confirm(`Are you sure you want to delete the account "${label}"?`)) {
     try {
       await deleteAccount(id);
       loadAccountsList();
       loadDashboard();
     } catch (e) {
-      alert(`Erro: ${e.message}`);
+      alert(`Error: ${e.message}`);
     }
   }
 }
@@ -495,16 +495,16 @@ function renderSchedulesList(accounts) {
       </div>
       <div class="schedule-item__actions">
         <button class="btn btn--sm btn--ghost" onclick="toggleScheduleEnabled('${s.accountId}','${s.id}',${!s.enabled})">
-          ${s.enabled ? 'Desativar' : 'Ativar'}
+          ${s.enabled ? 'Disable' : 'Enable'}
         </button>
-        <button class="btn btn--sm btn--danger" onclick="confirmDeleteSchedule('${s.accountId}','${s.id}')">Excluir</button>
+        <button class="btn btn--sm btn--danger" onclick="confirmDeleteSchedule('${s.accountId}','${s.id}')">Delete</button>
       </div>
     </div>
   `).join('');
 }
 
 function showScheduleModal() {
-  $('scheduleModalTitle').textContent = 'Novo Agendamento';
+  $('scheduleModalTitle').textContent = 'New Schedule';
   $('scheduleFormAccountId').value = '';
   $('scheduleFormId').value = '';
   $('scheduleCron').value = '';
@@ -538,12 +538,12 @@ async function toggleScheduleEnabled(accountId, schedId, enabled) {
     await updateScheduleApi(accountId, schedId, { enabled });
     loadSchedulesList();
   } catch (e) {
-    alert(`Erro: ${e.message}`);
+    alert(`Error: ${e.message}`);
   }
 }
 
 async function confirmDeleteSchedule(accountId, schedId) {
-  if (confirm('Excluir este agendamento?')) {
+  if (confirm('Delete this schedule?')) {
     try {
       await deleteSchedule(accountId, schedId);
       loadSchedulesList();
