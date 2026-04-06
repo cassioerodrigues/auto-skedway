@@ -92,8 +92,9 @@ def _check_booking_result(page, logger: ExecutionLogger) -> str:
         logger.warning(f"Booking failed: {text}")
         return "failure"
 
-    logger.warning("Booking result is ambiguous — could not determine success/failure")
-    return "failure"
+    logger.info("No error detected after booking — assuming success")
+    logger.screenshot(page, "assumed_success")
+    return "success"
 
 
 def attempt_single_booking(

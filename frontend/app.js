@@ -40,6 +40,7 @@ const triggerRun = (id) => api(`/api/accounts/${id}/run`, { method: 'POST' });
 const createSchedule = (accountId, data) => api(`/api/accounts/${accountId}/schedules`, { method: 'POST', body: JSON.stringify(data) });
 const deleteSchedule = (accountId, schedId) => api(`/api/accounts/${accountId}/schedules/${schedId}`, { method: 'DELETE' });
 const updateScheduleApi = (accountId, schedId, data) => api(`/api/accounts/${accountId}/schedules/${schedId}`, { method: 'PUT', body: JSON.stringify(data) });
+const deleteExecution = (ts) => api(`/api/executions/${ts}`, { method: 'DELETE' });
 
 // ========================================
 // Tab Navigation
@@ -172,7 +173,10 @@ function renderExecutions(executions) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
             ${e.screenshots || 0} imagens
           </div>
-          <div class="execution-card__arrow">→</div>
+          <div class="execution-card__actions">
+            <button class="btn btn--xs btn--danger" onclick="event.stopPropagation(); handleDeleteExecution('${e.timestamp}')" title="Excluir">🗑</button>
+            <div class="execution-card__arrow">→</div>
+          </div>
         </div>
       </div>`;
   }).join('');
@@ -289,6 +293,31 @@ function toggleLog(logId) {
 
 function closeModal(modalId) {
   $(modalId).classList.remove('active');
+}
+
+async function confirmDeleteExecution() {
+  if (!state.selectedExecution) return;
+  const ts = state.selectedExecution.timestamp;
+  if (!confirm(`Deseja excluir esta execução e todos os screenshots?\n\n${ts}`)) return;
+  try {
+    await deleteExecution(ts);
+    closeModal('detailsModal');
+    state.executions = await fetchExecutions();
+    renderExecutions(state.executions);
+  } catch (e) {
+    alert(`Erro ao excluir: ${e.message}`);
+  }
+}
+
+async function handleDeleteExecution(ts) {
+  if (!confirm(`Deseja excluir esta execução e todos os screenshots?\n\n${ts}`)) return;
+  try {
+    await deleteExecution(ts);
+    state.executions = await fetchExecutions();
+    renderExecutions(state.executions);
+  } catch (e) {
+    alert(`Erro ao excluir: ${e.message}`);
+  }
 }
 
 // ========================================
@@ -520,6 +549,7 @@ async function confirmDeleteSchedule(accountId, schedId) {
 function initEventListeners() {
   $('modalCloseBtn').addEventListener('click', () => closeModal('detailsModal'));
   $('detailsModal').querySelector('.modal__backdrop').addEventListener('click', () => closeModal('detailsModal'));
+  $('deleteExecutionBtn').addEventListener('click', () => confirmDeleteExecution());
   $('accountModalCloseBtn').addEventListener('click', () => closeModal('accountModal'));
   $('accountModal').querySelector('.modal__backdrop').addEventListener('click', () => closeModal('accountModal'));
   $('accountCancelBtn').addEventListener('click', () => closeModal('accountModal'));

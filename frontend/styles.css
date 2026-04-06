@@ -432,6 +432,12 @@ body {
   transition: transform var(--transition-fast);
 }
 
+.execution-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 .execution-card:hover .execution-card__arrow {
   transform: translateX(4px);
 }
@@ -526,6 +532,12 @@ body {
 .modal__title {
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+.modal__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .modal__close {
@@ -988,6 +1000,12 @@ body {
 .btn--sm {
   padding: 0.3rem 0.7rem;
   font-size: 0.8125rem;
+}
+
+.btn--xs {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+  line-height: 1;
 }
 
 .btn--loading {

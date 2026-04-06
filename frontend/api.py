@@ -8,6 +8,7 @@ Serves the frontend and provides API endpoints for accounts, schedules, executio
 import os
 import sys
 import json
+import shutil
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -164,6 +165,24 @@ def get_screenshot(timestamp, filename):
         return send_from_directory(LOGS_DIR / timestamp, filename)
     except Exception as e:
         logger.error(f"Error getting screenshot: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/executions/<timestamp>", methods=["DELETE"])
+def delete_execution(timestamp):
+    """Delete an execution log folder and all its contents (screenshots, logs)."""
+    try:
+        execution_folder = LOGS_DIR / timestamp
+        if not execution_folder.exists():
+            return jsonify({"error": "Execution not found"}), 404
+        # Validate that the folder is actually inside LOGS_DIR (path traversal prevention)
+        if not execution_folder.resolve().parent == LOGS_DIR.resolve():
+            return jsonify({"error": "Invalid path"}), 400
+        shutil.rmtree(execution_folder)
+        logger.info(f"Deleted execution log: {timestamp}")
+        return jsonify({"message": "Execution deleted", "timestamp": timestamp})
+    except Exception as e:
+        logger.error(f"Error deleting execution {timestamp}: {e}")
         return jsonify({"error": str(e)}), 500
 
 
