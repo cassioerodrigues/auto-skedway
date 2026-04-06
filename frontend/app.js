@@ -226,6 +226,8 @@ async function handleRunNow(accountId) {
 }
 
 let _pollTimer = null;
+let _detailsPollTimer = null;
+
 async function pollStatus() {
   try {
     const status = await fetchStatus();
@@ -260,6 +262,11 @@ async function pollStatus() {
 
 async function showExecutionDetails(execution) {
   state.selectedExecution = execution;
+  // Stop any existing polling before starting new detail view
+  if (_detailsPollTimer) {
+    clearInterval(_detailsPollTimer);
+    _detailsPollTimer = null;
+  }
   const details = await fetchExecutionDetails(execution.timestamp);
   if (!details) return;
 
@@ -293,6 +300,11 @@ async function showExecutionDetails(execution) {
 
   $('detailsModal').classList.add('active');
   setupToggleButtons();
+
+  // Start auto-refresh if execution is in progress
+  if (execution.status === 'in_progress') {
+    startDetailsPolling(execution.timestamp);
+  }
 }
 
 function openScreenshotModal(url, filename) {
@@ -325,6 +337,71 @@ function toggleLog(logId) {
 
 function closeModal(modalId) {
   $(modalId).classList.remove('active');
+  // Stop details polling when modal is closed
+  if (modalId === 'detailsModal' && _detailsPollTimer) {
+    clearInterval(_detailsPollTimer);
+    _detailsPollTimer = null;
+  }
+}
+
+async function startDetailsPolling(timestamp) {
+  if (_detailsPollTimer) clearInterval(_detailsPollTimer);
+  
+  _detailsPollTimer = setInterval(async () => {
+    try {
+      const execution = state.selectedExecution;
+      if (!execution || execution.timestamp !== timestamp) {
+        clearInterval(_detailsPollTimer);
+        _detailsPollTimer = null;
+        return;
+      }
+
+      const details = await fetchExecutionDetails(timestamp);
+      if (!details) return;
+
+      // Check if execution has completed
+      if (details.status && details.status !== 'in_progress') {
+        // Execution completed, stop polling
+        clearInterval(_detailsPollTimer);
+        _detailsPollTimer = null;
+        state.selectedExecution = { ...state.selectedExecution, ...details };
+      }
+
+      // Update execution log
+      const logElement = $('executionLog');
+      if (logElement) {
+        logElement.textContent = details.execution_log || 'Log not available';
+        // Auto-scroll to bottom
+        logElement.parentElement.scrollTop = logElement.parentElement.scrollHeight;
+      }
+
+      // Update screenshots if new ones appeared
+      const sc = $('screenshotsContainer');
+      if (sc && details.screenshot_files?.length) {
+        sc.innerHTML = details.screenshot_files.map((f) => {
+          const url = (window.API_PREFIX || '') + `/api/executions/${timestamp}/screenshots/${f}`;
+          return `<div class="screenshot-item" onclick="openScreenshotModal('${url}','${f}')"><img src="${url}" alt="${f}" loading="lazy" /><div class="screenshot-item__label">${f}</div></div>`;
+        }).join('');
+      }
+
+      // Update summary data
+      const rc = ['dry_run_success', 'success'].includes(details.result) ? 'summary-item__value--success'
+        : ['login_failed', 'failure', 'error'].includes(details.result) ? 'summary-item__value--error' : 'summary-item__value--warning';
+      
+      $('summaryGrid').innerHTML = `
+        <div class="summary-item"><div class="summary-item__label">Resultado</div><div class="summary-item__value ${rc}">${details.result || 'Em Andamento'}</div></div>
+        <div class="summary-item"><div class="summary-item__label">Conta</div><div class="summary-item__value">${details.account_id || '-'}</div></div>
+        <div class="summary-item"><div class="summary-item__label">Data Alvo</div><div class="summary-item__value">${details.target_date || '-'}</div></div>
+        <div class="summary-item"><div class="summary-item__label">Mesa Agendada</div><div class="summary-item__value">${details.booked_desk || '-'}</div></div>
+        <div class="summary-item"><div class="summary-item__label">Desks Attempted</div><div class="summary-item__value">${(details.desks_attempted || []).join(', ') || '-'}</div></div>
+        <div class="summary-item"><div class="summary-item__label">Duration</div><div class="summary-item__value">${formatDuration(details.duration_seconds)}</div></div>
+      `;
+
+      $('summaryJson').textContent = JSON.stringify(details, null, 2);
+    } catch (e) {
+      console.error('Details polling error:', e);
+    }
+  }, 2000);
 }
 
 async function confirmDeleteExecution() {
