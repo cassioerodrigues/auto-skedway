@@ -52,7 +52,7 @@ RETRY_DELAY_MIN = 3.0
 RETRY_DELAY_MAX = 5.0
 
 # --- Browser ---
-BROWSER_CHANNEL = "chromium"
+BROWSER_CHANNEL = "msedge"
 VIEWPORT_WIDTH = 1920
 VIEWPORT_HEIGHT = 1080
 SLOW_MO_DEFAULT = 50
@@ -101,9 +101,10 @@ BOOKING_SUBMIT_SELECTORS = [
 
 # --- User-Agent ---
 BROWSER_USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) "
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/146.0.0.0 Safari/537.36"
+    "Chrome/146.0.0.0 Safari/537.36 "
+    "Edg/146.0.0.0"
 )
 
 

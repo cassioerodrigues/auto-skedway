@@ -8,7 +8,7 @@ import config
 # Stealth instance (reusable)
 _stealth = Stealth(
     navigator_languages_override=("pt-BR", "pt", "en-US", "en"),
-    navigator_platform_override="Linux x86_64",
+    navigator_platform_override="Win32",
     navigator_user_agent_override=config.BROWSER_USER_AGENT,
     navigator_vendor_override="Google Inc.",
 )
