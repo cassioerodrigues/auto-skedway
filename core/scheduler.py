@@ -217,6 +217,25 @@ def get_scheduled_jobs() -> list[dict]:
     return jobs
 
 
+def get_next_run_by_account(account_id: str) -> str | None:
+    """Get the earliest next_run time for all jobs of an account.
+    
+    Returns ISO format datetime string or None if no jobs scheduled.
+    """
+    if not _scheduler:
+        return None
+    
+    earliest = None
+    for job in _scheduler.get_jobs():
+        # Job ID format: "{account_id}_{schedule_id}"
+        if job.id.startswith(f"{account_id}_"):
+            if job.next_run_time:
+                if earliest is None or job.next_run_time < earliest:
+                    earliest = job.next_run_time
+    
+    return earliest.isoformat() if earliest else None
+
+
 def shutdown_scheduler():
     """Shut down the scheduler gracefully."""
     global _scheduler

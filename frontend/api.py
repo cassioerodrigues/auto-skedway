@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from core import account_manager
 from core.scheduler import (
     init_scheduler, trigger_run, get_active_runs,
-    reload_jobs, get_scheduled_jobs, shutdown_scheduler,
+    reload_jobs, get_scheduled_jobs, get_next_run_by_account, shutdown_scheduler,
 )
 
 # Configuration
@@ -203,6 +203,7 @@ def list_accounts():
                 acc.get("credentials", {}).get("user")
                 and acc.get("credentials", {}).get("passwd")
             )
+            a["next_run"] = get_next_run_by_account(acc["id"])
             safe.append(a)
         return jsonify(safe)
     except Exception as e:
