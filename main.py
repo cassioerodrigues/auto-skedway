@@ -60,10 +60,12 @@ def main():
     os.makedirs(logs_dir, exist_ok=True)
 
     # Start scheduler
+    print("[main] Initializing scheduler...")
     init_scheduler()
+    print("[main] Scheduler initialized")
 
     try:
-        print(f"Starting Auto Skedway on http://{args.host}:{args.port}")
+        print(f"[main] Starting Auto Skedway on http://{args.host}:{args.port}")
         app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
     finally:
         shutdown_scheduler()

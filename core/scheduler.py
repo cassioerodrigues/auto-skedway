@@ -31,6 +31,7 @@ def _job_listener(event):
 
 def _execute_job(account_id: str):
     """Run a booking job for an account (called by scheduler or manually)."""
+    print(f"[scheduler] Job triggered for account: {account_id}")
     if account_id in _active_runs:
         logger.warning(f"Account {account_id} is already running — skipping")
         return
@@ -116,9 +117,11 @@ def init_scheduler() -> BackgroundScheduler:
     _load_all_jobs()
     _scheduler.start()
 
-    # Log next run times for debugging
-    for job in _scheduler.get_jobs():
-        logger.info(f"  → {job.name} | next run: {job.next_run_time}")
+    # Log next run times for debugging (print to guarantee stdout)
+    jobs = _scheduler.get_jobs()
+    print(f"[scheduler] Started with {len(jobs)} jobs:")
+    for job in jobs:
+        print(f"[scheduler]   → {job.name} | next run: {job.next_run_time}")
 
     logger.info("Scheduler started")
     return _scheduler
@@ -151,6 +154,7 @@ def _load_all_jobs():
                     name=f"{account.get('label', account['id'])} - {schedule.get('description', schedule['cron'])}",
                 )
                 job_count += 1
+                print(f"[scheduler] Loaded job {job_id}: {schedule['cron']} (tz={tz})")
                 logger.info(f"Scheduled job {job_id}: {schedule['cron']}")
             except Exception as e:
                 logger.error(f"Failed to schedule job for {account['id']}/{schedule['id']}: {e}")
