@@ -139,15 +139,16 @@ def _load_all_jobs():
             if not schedule.get("enabled", True):
                 continue
             try:
-                cron_kwargs = _parse_cron(schedule["cron"])
                 job_id = f"{account['id']}_{schedule['id']}"
                 # Use account timezone if available, fallback to America/Sao_Paulo
                 tz = account.get("preferences", {}).get("site_params", {}).get(
                     "timezone", "America/Sao_Paulo"
                 )
+                # from_crontab handles standard cron convention (0=Sunday)
+                trigger = CronTrigger.from_crontab(schedule["cron"], timezone=tz)
                 _scheduler.add_job(
                     _execute_job,
-                    trigger=CronTrigger(timezone=tz, **cron_kwargs),
+                    trigger=trigger,
                     args=[account["id"]],
                     id=job_id,
                     replace_existing=True,
