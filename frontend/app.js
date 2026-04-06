@@ -91,7 +91,12 @@ function formatDuration(seconds) {
   return `${Math.floor(seconds / 60)}m ${(seconds % 60).toFixed(0)}s`;
 }
 
-function getStatusBadge(result) {
+function getStatusBadge(result, execution) {
+  // Check if execution is in progress
+  if (execution?.status === 'in_progress') {
+    return `<span class="badge badge--warning"><span class="badge__dot loading__spinner loading__spinner--xs"></span>Em Andamento</span>`;
+  }
+  
   const map = {
     dry_run_success: { label: 'Dry Run', cls: 'success' },
     success: { label: 'Sucesso', cls: 'success' },
@@ -159,6 +164,11 @@ function renderExecutions(executions) {
     return;
   }
   const sorted = [...executions].sort((a, b) => {
+    // In-progress executions first, then by date
+    const aInProgress = a.status === 'in_progress' ? 0 : 1;
+    const bInProgress = b.status === 'in_progress' ? 0 : 1;
+    if (aInProgress !== bInProgress) return aInProgress - bInProgress;
+    
     const ta = new Date(a.execution_time), tb = new Date(b.execution_time);
     return state.sortOrder === 'newest' ? tb - ta : ta - tb;
   });
@@ -171,7 +181,7 @@ function renderExecutions(executions) {
             <div class="execution-card__title">${formatDate(e.execution_time)}</div>
             <div class="execution-card__time">${accountLabel}</div>
           </div>
-          ${getStatusBadge(e.result)}
+          ${getStatusBadge(e.result, e)}
         </div>
         <div class="execution-card__details">
           <div class="execution-detail"><div class="execution-detail__label">Target Date</div><div class="execution-detail__value">${e.target_date || '-'}</div></div>
@@ -218,7 +228,15 @@ async function pollStatus() {
     const status = await fetchStatus();
     state.activeRuns = status.active_runs || {};
     renderAccountStatusCards(state.accounts);
+    
     const hasRunning = Object.values(state.activeRuns).some((r) => r.status === 'running');
+    
+    // Refresh executions to show in-progress ones in real-time
+    if (hasRunning) {
+      state.executions = await fetchExecutions();
+      renderExecutions(state.executions);
+    }
+    
     if (hasRunning && !_pollTimer) {
       _pollTimer = setInterval(pollStatus, 3000);
     } else if (!hasRunning && _pollTimer) {

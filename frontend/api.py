@@ -133,6 +133,14 @@ def get_executions():
                 if account_filter and data.get("account_id") != account_filter:
                     continue
                 executions.append(data)
+        
+        # Sort: in_progress first, then by timestamp (newest first)
+        def sort_key(exec):
+            is_in_progress = exec.get("status") == "in_progress"
+            parsed_time = exec.get("parsed_time", "")
+            return (not is_in_progress, -datetime.fromisoformat(parsed_time).timestamp() if parsed_time else 0)
+        
+        executions.sort(key=sort_key)
         return jsonify(executions)
     except Exception as e:
         logger.error(f"Error getting executions: {e}")

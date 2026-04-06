@@ -64,6 +64,7 @@ def run_booking(account: dict, debug: bool = False, dry_run: bool = False) -> di
         logger.info("Launching browser with stealth mode...")
         pw, browser, context, page = setup_browser(debug=debug)
         logger.info("Browser launched successfully")
+        logger.update_summary(target_date=None, desks_attempted=[])
 
         check_timeout()
 
@@ -82,6 +83,7 @@ def run_booking(account: dict, debug: bool = False, dry_run: bool = False) -> di
             logger.finalize("failed")
             return {"result": "login_failed", "account_id": account_id}
 
+        logger.update_summary(target_date=None, desks_attempted=[])
         check_timeout()
 
         # Booking
@@ -94,6 +96,13 @@ def run_booking(account: dict, debug: bool = False, dry_run: bool = False) -> di
             logger=logger,
             dry_run=dry_run,
             site_params=site_params,
+        )
+
+        logger.update_summary(
+            target_date=result["target_date"],
+            desks_attempted=result["desks_attempted"],
+            result=result["result"],
+            booked_desk=result["booked_desk"],
         )
 
         logger.save_summary(

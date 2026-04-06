@@ -70,6 +70,9 @@ class ExecutionLogger:
 
         self.info(f"Execution started — logs at: {self.log_dir}")
 
+        # Create initial summary with in_progress status
+        self._create_initial_summary()
+
     def debug(self, msg: str):
         self.logger.debug(msg)
 
@@ -105,6 +108,49 @@ class ExecutionLogger:
 
         return filepath
 
+    def _create_initial_summary(self):
+        """Create initial summary.json with in_progress status."""
+        summary = {
+            "execution_time": self.start_time.isoformat(),
+            "account_id": self.account_id,
+            "status": "in_progress",
+            "target_date": None,
+            "desks_attempted": [],
+            "result": None,
+            "booked_desk": None,
+            "duration_seconds": 0,
+            "screenshots": 0,
+            "screenshot_files": [],
+        }
+        filepath = os.path.join(self.log_dir, "summary.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+
+    def update_summary(
+        self,
+        target_date: str | None = None,
+        desks_attempted: list | None = None,
+        result: str | None = None,
+        booked_desk: str | None = None,
+    ):
+        """Update summary.json with current execution progress."""
+        duration = (datetime.now() - self.start_time).total_seconds()
+        summary = {
+            "execution_time": self.start_time.isoformat(),
+            "account_id": self.account_id,
+            "status": "in_progress",
+            "target_date": target_date,
+            "desks_attempted": desks_attempted or [],
+            "result": result,
+            "booked_desk": booked_desk,
+            "duration_seconds": round(duration, 2),
+            "screenshots": len(self.screenshots),
+            "screenshot_files": self.screenshots,
+        }
+        filepath = os.path.join(self.log_dir, "summary.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+
     def save_summary(
         self,
         target_date: str,
@@ -117,6 +163,7 @@ class ExecutionLogger:
         summary = {
             "execution_time": self.start_time.isoformat(),
             "account_id": self.account_id,
+            "status": "completed",
             "target_date": target_date,
             "desks_attempted": desks_attempted,
             "result": result,
