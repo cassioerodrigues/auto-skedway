@@ -12,7 +12,6 @@ Uses **Playwright + Chromium** with stealth anti-detection to simulate human-lik
 - **Anti-detection** — stealth mode, human-like typing, random mouse movements
 - **Priority-based desk selection** — tries desks in order with retry logic
 - **Full logging** — text logs, screenshots at every step, JSON summaries
-- **Docker support** — single `docker compose up` to run everything
 
 ## Prerequisites
 
@@ -89,19 +88,7 @@ Options:
 - `--host 127.0.0.1` — bind to localhost only
 - `--debug` — enable debug mode
 - `--run-once <account_id>` — run a single account and exit (no server)
-
-## Running via Docker
-
-```bash
-docker compose up --build -d
-```
-
-The dashboard is available at http://localhost:5000.
-
-Data is persisted via volume mounts:
-- `accounts.json` — account configuration
-- `.env` — credentials
-- `logs/` — execution logs and screenshots
+- `--dry-run` — navigate but don't click submit
 
 ## Frontend Usage
 
@@ -127,4 +114,3 @@ python -m pytest tests/ -v
 | Bot detected | Increase delays in `config.py` (SLOW_MO) |
 | Button not found | Check screenshots in logs — DOM may have changed |
 | Timeout | Increase timeout in account preferences |
-| Docker build fails | Ensure Docker is installed and running |
