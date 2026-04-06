@@ -90,7 +90,11 @@ def get_active_runs() -> dict:
 
 
 def _parse_cron(cron_str: str) -> dict:
-    """Parse a 5-field cron expression into APScheduler kwargs."""
+    """Parse a 5-field cron expression into APScheduler kwargs.
+
+    Converts day_of_week from standard cron convention (0=Sunday)
+    to APScheduler convention (0=Monday).
+    """
     parts = cron_str.strip().split()
     if len(parts) != 5:
         raise ValueError(f"Invalid cron expression (need 5 fields): {cron_str}")
@@ -99,8 +103,34 @@ def _parse_cron(cron_str: str) -> dict:
         "hour": parts[1],
         "day": parts[2],
         "month": parts[3],
-        "day_of_week": parts[4],
+        "day_of_week": _convert_dow(parts[4]),
     }
+
+
+def _convert_dow(field: str) -> str:
+    """Convert day_of_week from cron (0=Sun) to APScheduler (0=Mon).
+
+    Handles: single values (1), ranges (1-5), lists (1,3,5), mixed (1-3,5),
+    wildcards (*), and 7 as Sunday alias.
+    """
+    # Map: cron_value -> apscheduler_value
+    # cron: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 7=Sun
+    # aps:  0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+    if field == "*":
+        return "*"
+
+    def convert_single(v: str) -> str:
+        n = int(v)
+        return str((n - 1) % 7)
+
+    result_parts = []
+    for segment in field.split(","):
+        if "-" in segment:
+            start, end = segment.split("-", 1)
+            result_parts.append(f"{convert_single(start)}-{convert_single(end)}")
+        else:
+            result_parts.append(convert_single(segment))
+    return ",".join(result_parts)
 
 
 def init_scheduler() -> BackgroundScheduler:
@@ -139,16 +169,15 @@ def _load_all_jobs():
             if not schedule.get("enabled", True):
                 continue
             try:
+                cron_kwargs = _parse_cron(schedule["cron"])
                 job_id = f"{account['id']}_{schedule['id']}"
                 # Use account timezone if available, fallback to America/Sao_Paulo
                 tz = account.get("preferences", {}).get("site_params", {}).get(
                     "timezone", "America/Sao_Paulo"
                 )
-                # from_crontab handles standard cron convention (0=Sunday)
-                trigger = CronTrigger.from_crontab(schedule["cron"], timezone=tz)
                 _scheduler.add_job(
                     _execute_job,
-                    trigger=trigger,
+                    trigger=CronTrigger(timezone=tz, **cron_kwargs),
                     args=[account["id"]],
                     id=job_id,
                     replace_existing=True,
