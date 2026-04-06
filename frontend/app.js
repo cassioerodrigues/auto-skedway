@@ -20,7 +20,9 @@ const $ = (id) => document.getElementById(id);
 // ========================================
 
 async function api(path, options = {}) {
-  const res = await fetch(path, {
+  // Add API_PREFIX if running under /skedway/
+  const fullPath = (window.API_PREFIX || '') + path;
+  const res = await fetch(fullPath, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });

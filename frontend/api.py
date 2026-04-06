@@ -40,11 +40,7 @@ app.wsgi_app = ProxyFix(
     x_for=1,      # Trust X-Real-IP / X-Forwarded-For
     x_proto=1,    # Trust X-Forwarded-Proto (http/https)
     x_host=1,     # Trust X-Forwarded-Host
-    x_prefix=1    # Trust X-Forwarded-Prefix (for /skedway/ path)
 )
-
-# Support both / and /skedway/ paths for nginx deployment
-SUBPATH = "/skedway"
 
 # Configure logging
 logging.basicConfig(

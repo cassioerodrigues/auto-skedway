@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Auto Skedway</title>
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Detect if running under /skedway/ subpath and set API prefix
+    const currentPath = window.location.pathname;
+    const isSubpath = currentPath.startsWith('/skedway/');
+    window.API_PREFIX = isSubpath ? '/skedway' : '';
+    console.log('API_PREFIX:', window.API_PREFIX, 'isSubpath:', isSubpath);
+  </script>
 </head>
 <body>
   <div class="container">
