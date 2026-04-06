@@ -94,20 +94,20 @@ function formatDuration(seconds) {
 function getStatusBadge(result, execution) {
   // Check if execution is in progress
   if (execution?.status === 'in_progress') {
-    return `<span class="badge badge--warning"><span class="loading__spinner loading__spinner--xs"></span>Em Andamento</span>`;
+    return `<span class="badge badge--warning"><span class="loading__spinner loading__spinner--xs"></span>In Progress</span>`;
   }
   
   const map = {
     dry_run_success: { label: 'Dry Run', cls: 'success' },
-    success: { label: 'Sucesso', cls: 'success' },
-    login_failed: { label: 'Falha Login', cls: 'error' },
-    failure: { label: 'Falha', cls: 'error' },
+    success: { label: 'Success', cls: 'success' },
+    login_failed: { label: 'Login Failed', cls: 'error' },
+    failure: { label: 'Failure', cls: 'error' },
     timeout: { label: 'Timeout', cls: 'error' },
-    error: { label: 'Erro', cls: 'error' },
+    error: { label: 'Error', cls: 'error' },
   };
   
   // Handle the result field - can be null for old executions without status
-  const resultStr = result || execution?.result || 'Desconhecido';
+  const resultStr = result || execution?.result || 'Unknown';
   const s = map[resultStr] || { label: resultStr, cls: 'warning' };
   return `<span class="badge badge--${s.cls}"><span class="badge__dot"></span>${s.label}</span>`;
 }
@@ -221,7 +221,7 @@ async function handleRunNow(accountId) {
     renderAccountStatusCards(state.accounts);
     pollStatus();
   } catch (e) {
-    alert(`Erro: ${e.message}`);
+    alert(`Error: ${e.message}`);
   }
 }
 
@@ -276,10 +276,10 @@ async function showExecutionDetails(execution) {
     : ['login_failed', 'failure', 'error'].includes(execution.result) ? 'summary-item__value--error' : 'summary-item__value--warning';
 
   $('summaryGrid').innerHTML = `
-    <div class="summary-item"><div class="summary-item__label">Resultado</div><div class="summary-item__value ${rc}">${execution.result}</div></div>
-    <div class="summary-item"><div class="summary-item__label">Conta</div><div class="summary-item__value">${execution.account_id || '-'}</div></div>
-    <div class="summary-item"><div class="summary-item__label">Data Alvo</div><div class="summary-item__value">${execution.target_date || '-'}</div></div>
-    <div class="summary-item"><div class="summary-item__label">Mesa Agendada</div><div class="summary-item__value">${execution.booked_desk || '-'}</div></div>
+    <div class="summary-item"><div class="summary-item__label">Result</div><div class="summary-item__value ${rc}">${execution.result}</div></div>
+    <div class="summary-item"><div class="summary-item__label">Account</div><div class="summary-item__value">${execution.account_id || '-'}</div></div>
+    <div class="summary-item"><div class="summary-item__label">Target Date</div><div class="summary-item__value">${execution.target_date || '-'}</div></div>
+    <div class="summary-item"><div class="summary-item__label">Booked Desk</div><div class="summary-item__value">${execution.booked_desk || '-'}</div></div>
     <div class="summary-item"><div class="summary-item__label">Desks Attempted</div><div class="summary-item__value">${(execution.desks_attempted || []).join(', ') || '-'}</div></div>
     <div class="summary-item"><div class="summary-item__label">Duration</div><div class="summary-item__value">${formatDuration(execution.duration_seconds)}</div></div>
   `;
@@ -389,10 +389,10 @@ async function startDetailsPolling(timestamp) {
         : ['login_failed', 'failure', 'error'].includes(details.result) ? 'summary-item__value--error' : 'summary-item__value--warning';
       
       $('summaryGrid').innerHTML = `
-        <div class="summary-item"><div class="summary-item__label">Resultado</div><div class="summary-item__value ${rc}">${details.result || 'Em Andamento'}</div></div>
-        <div class="summary-item"><div class="summary-item__label">Conta</div><div class="summary-item__value">${details.account_id || '-'}</div></div>
-        <div class="summary-item"><div class="summary-item__label">Data Alvo</div><div class="summary-item__value">${details.target_date || '-'}</div></div>
-        <div class="summary-item"><div class="summary-item__label">Mesa Agendada</div><div class="summary-item__value">${details.booked_desk || '-'}</div></div>
+        <div class="summary-item"><div class="summary-item__label">Result</div><div class="summary-item__value ${rc}">${details.result || 'In Progress'}</div></div>
+        <div class="summary-item"><div class="summary-item__label">Account</div><div class="summary-item__value">${details.account_id || '-'}</div></div>
+        <div class="summary-item"><div class="summary-item__label">Target Date</div><div class="summary-item__value">${details.target_date || '-'}</div></div>
+        <div class="summary-item"><div class="summary-item__label">Booked Desk</div><div class="summary-item__value">${details.booked_desk || '-'}</div></div>
         <div class="summary-item"><div class="summary-item__label">Desks Attempted</div><div class="summary-item__value">${(details.desks_attempted || []).join(', ') || '-'}</div></div>
         <div class="summary-item"><div class="summary-item__label">Duration</div><div class="summary-item__value">${formatDuration(details.duration_seconds)}</div></div>
       `;
@@ -489,8 +489,8 @@ function showAccountModal(account = null) {
   $('accountStartTime').value = account?.preferences?.start_time || '08:30';
   $('accountEndTime').value = account?.preferences?.end_time || '17:00';
   $('accountEnabled').checked = account?.enabled ?? true;
-  $('accountUser').placeholder = account ? 'Deixe vazio para manter' : 'email@volvo.com';
-  $('accountPasswd').placeholder = account ? 'Deixe vazio para manter' : '••••••••';
+  $('accountUser').placeholder = account ? 'Leave blank to keep current' : 'email@volvo.com';
+  $('accountPasswd').placeholder = account ? 'Leave blank to keep current' : '••••••••';
   $('accountModal').classList.add('active');
 }
 
@@ -537,7 +537,7 @@ async function handleAccountSubmit(e) {
     loadAccountsList();
     loadDashboard();
   } catch (e) {
-    alert(`Erro: ${e.message}`);
+    alert(`Error: ${e.message}`);
   }
 }
 
@@ -566,15 +566,15 @@ function renderSchedulesList(accounts) {
   // Add schedule button
   const headerHtml = `
     <div class="section-header" style="margin-bottom: 1rem;">
-      <span>${allSchedules.length} agendamento(s)</span>
+      <span>${allSchedules.length} Schedule(s)</span>
       <button class="btn btn--primary btn--sm" onclick="showScheduleModal()">
-        + Novo Agendamento
+        + New Schedule
       </button>
     </div>
   `;
 
   if (!allSchedules.length) {
-    list.innerHTML = headerHtml + `<div class="empty-state"><div class="empty-state__icon">⏰</div><div class="empty-state__title">Nenhum Agendamento</div><div class="empty-state__text">Adicione um agendamento para executar automaticamente</div></div>`;
+    list.innerHTML = headerHtml + `<div class="empty-state"><div class="empty-state__icon">⏰</div><div class="empty-state__title">No Schedules</div><div class="empty-state__text">Add a schedule to run automatically</div></div>`;
     return;
   }
 
@@ -587,7 +587,7 @@ function renderSchedulesList(accounts) {
           ${getStatusBadge(s.enabled ? 'success' : 'warning')}
         </div>
         <div class="schedule-item__meta">
-          <span>Conta: <strong>${s.accountLabel}</strong></span>
+          <span>Account: <strong>${s.accountLabel}</strong></span>
           <span>ID: <code>${s.id}</code></span>
         </div>
       </div>
@@ -627,7 +627,7 @@ async function handleScheduleSubmit(e) {
     closeModal('scheduleModal');
     loadSchedulesList();
   } catch (e) {
-    alert(`Erro: ${e.message}`);
+    alert(`Error: ${e.message}`);
   }
 }
 
@@ -646,7 +646,7 @@ async function confirmDeleteSchedule(accountId, schedId) {
       await deleteSchedule(accountId, schedId);
       loadSchedulesList();
     } catch (e) {
-      alert(`Erro: ${e.message}`);
+      alert(`Error: ${e.message}`);
     }
   }
 }
