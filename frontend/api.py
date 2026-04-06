@@ -137,8 +137,15 @@ def get_executions():
         # Sort: in_progress first, then by timestamp (newest first)
         def sort_key(exec):
             is_in_progress = exec.get("status") == "in_progress"
-            parsed_time = exec.get("parsed_time", "")
-            return (not is_in_progress, -datetime.fromisoformat(parsed_time).timestamp() if parsed_time else 0)
+            try:
+                parsed_time = exec.get("parsed_time", "")
+                if parsed_time:
+                    ts = datetime.fromisoformat(parsed_time).timestamp()
+                else:
+                    ts = 0
+            except (ValueError, TypeError):
+                ts = 0
+            return (not is_in_progress, -ts)
         
         executions.sort(key=sort_key)
         return jsonify(executions)

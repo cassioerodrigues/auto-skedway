@@ -94,7 +94,7 @@ function formatDuration(seconds) {
 function getStatusBadge(result, execution) {
   // Check if execution is in progress
   if (execution?.status === 'in_progress') {
-    return `<span class="badge badge--warning"><span class="badge__dot loading__spinner loading__spinner--xs"></span>Em Andamento</span>`;
+    return `<span class="badge badge--warning"><span class="loading__spinner loading__spinner--xs"></span>Em Andamento</span>`;
   }
   
   const map = {
@@ -105,7 +105,10 @@ function getStatusBadge(result, execution) {
     timeout: { label: 'Timeout', cls: 'error' },
     error: { label: 'Erro', cls: 'error' },
   };
-  const s = map[result] || { label: result || 'Desconhecido', cls: 'warning' };
+  
+  // Handle the result field - can be null for old executions without status
+  const resultStr = result || execution?.result || 'Desconhecido';
+  const s = map[resultStr] || { label: resultStr, cls: 'warning' };
   return `<span class="badge badge--${s.cls}"><span class="badge__dot"></span>${s.label}</span>`;
 }
 
