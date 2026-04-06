@@ -4,6 +4,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR, EVENT_JOB_MISSED
 
 from core.account_manager import load_accounts, get_account
 from core.runner import run_booking
@@ -14,6 +15,18 @@ logger = logging.getLogger("auto-skedway.scheduler")
 _active_runs: dict[str, dict] = {}
 _executor = ThreadPoolExecutor(max_workers=2)
 _scheduler: BackgroundScheduler | None = None
+
+
+def _job_listener(event):
+    """Log scheduler events for debugging."""
+    if event.exception:
+        logger.error(f"Scheduled job {event.job_id} FAILED with exception: {event.exception}")
+        logger.error(f"Traceback: {event.traceback}")
+    elif hasattr(event, 'job_id'):
+        if event.code == EVENT_JOB_MISSED:
+            logger.warning(f"Scheduled job {event.job_id} MISSED (scheduler was down?)")
+        else:
+            logger.info(f"Scheduled job {event.job_id} executed successfully")
 
 
 def _execute_job(account_id: str):
@@ -98,9 +111,15 @@ def init_scheduler() -> BackgroundScheduler:
     _scheduler = BackgroundScheduler(
         job_defaults={"coalesce": True, "max_instances": 1}
     )
+    _scheduler.add_listener(_job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_MISSED)
 
     _load_all_jobs()
     _scheduler.start()
+
+    # Log next run times for debugging
+    for job in _scheduler.get_jobs():
+        logger.info(f"  → {job.name} | next run: {job.next_run_time}")
+
     logger.info("Scheduler started")
     return _scheduler
 
