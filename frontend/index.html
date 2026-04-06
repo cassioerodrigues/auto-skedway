@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Execution Dashboard - Auto Skedway</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header__content">
+        <h1 class="header__title">Execution Dashboard</h1>
+        <p class="header__subtitle">Visualize todas as execuções realizadas</p>
+      </div>
+      <button id="refreshBtn" class="header__refresh">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+        </svg>
+        Atualizar
+      </button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Filters & Stats -->
+      <div class="filters-section">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card__label">Total de Execuções</div>
+            <div class="stat-card__value" id="totalExecutions">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__label">Sucesso</div>
+            <div class="stat-card__value stat-card__value--success" id="successCount">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__label">Falhas</div>
+            <div class="stat-card__value stat-card__value--error" id="failureCount">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__label">Carregando...</div>
+            <div class="stat-card__value" id="loadingStatus">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline/List View -->
+      <div class="executions-section">
+        <div class="executions-header">
+          <h2 class="executions-title">Histórico de Execuções</h2>
+          <div class="sort-controls">
+            <select id="sortSelect" class="sort-select">
+              <option value="newest">Mais Recentes</option>
+              <option value="oldest">Mais Antigas</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="executionsList" class="executions-list">
+          <div class="loading">
+            <div class="loading__spinner"></div>
+            <p>Carregando execuções...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Detail Modal -->
+    <div id="detailsModal" class="modal">
+      <div class="modal__backdrop"></div>
+      <div class="modal__content">
+        <div class="modal__header">
+          <h2 id="modalTitle" class="modal__title">Detalhes da Execução</h2>
+          <button id="modalCloseBtn" class="modal__close">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal__body">
+          <!-- Summary -->
+          <div class="detail-section">
+            <h3 class="detail-section__title">Resumo</h3>
+            <div class="summary-grid" id="summaryGrid">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Screenshots -->
+          <div class="detail-section">
+            <h3 class="detail-section__title">Screenshots</h3>
+            <div id="screenshotsContainer" class="screenshots-gallery">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Execution Log -->
+          <div class="detail-section">
+            <h3 class="detail-section__title">Execution Log</h3>
+            <button id="toggleLogBtn" class="toggle-log-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              Mostrar Log Completo
+            </button>
+            <pre id="executionLog" class="execution-log log-collapsed"></pre>
+          </div>
+
+          <!-- Summary JSON -->
+          <div class="detail-section">
+            <h3 class="detail-section__title">Summary JSON</h3>
+            <button id="toggleJsonBtn" class="toggle-log-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              Mostrar JSON
+            </button>
+            <pre id="summaryJson" class="execution-log log-collapsed"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
