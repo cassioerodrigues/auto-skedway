@@ -118,13 +118,8 @@ def index():
     return send_from_directory(FRONTEND_DIR, "index.html")
 
 
-@app.route("/<path:filename>")
-def static_files(filename):
-    return send_from_directory(FRONTEND_DIR, filename)
-
-
 # ========================================
-# Execution Log Routes
+# Execution Log Routes (BEFORE generic static files)
 # ========================================
 
 @app.route("/api/executions", methods=["GET"])
@@ -413,6 +408,15 @@ def health_check():
         "logs_dir": str(LOGS_DIR),
         "logs_dir_exists": LOGS_DIR.exists(),
     })
+
+
+# ========================================
+# Generic Static Files (AFTER all API routes for priority)
+# ========================================
+
+@app.route("/<path:filename>")
+def static_files(filename):
+    return send_from_directory(FRONTEND_DIR, filename)
 
 
 # ========================================
