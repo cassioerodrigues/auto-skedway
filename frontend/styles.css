@@ -877,3 +877,500 @@ body {
 .empty-state__text {
   font-size: 0.875rem;
 }
+
+.empty-hint {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+/* ========================================
+   Tab Navigation
+   ======================================== */
+.tab-nav {
+  display: flex;
+  gap: var(--spacing-xs);
+  padding: 0 var(--spacing-2xl);
+  background: rgba(20, 20, 28, 0.4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.tab-nav__btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tab-nav__btn:hover {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tab-nav__btn.active {
+  color: var(--color-brand-light);
+  border-bottom-color: var(--color-brand);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ========================================
+   Buttons
+   ======================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn--primary {
+  background: var(--color-brand);
+  color: white;
+  border-color: var(--color-brand);
+}
+
+.btn--primary:hover {
+  background: var(--color-brand-hover);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+}
+
+.btn--danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.btn--danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.btn--accent {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.btn--accent:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+.btn--sm {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8125rem;
+}
+
+.btn--loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   Badge (Unified)
+   ======================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-md);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge--success { background: rgba(16, 185, 129, 0.15); color: var(--color-success); }
+.badge--error { background: rgba(239, 68, 68, 0.15); color: var(--color-error); }
+.badge--warning { background: rgba(245, 158, 11, 0.15); color: var(--color-warning); }
+.badge--info { background: rgba(59, 130, 246, 0.15); color: var(--color-info); }
+
+/* ========================================
+   Section Header
+   ======================================== */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ========================================
+   Account Status Cards (Dashboard)
+   ======================================== */
+.account-status-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.account-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-md);
+}
+
+.account-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--transition-normal);
+}
+
+.account-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-border-strong);
+}
+
+.account-card--disabled {
+  opacity: 0.6;
+}
+
+.account-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.account-card__label {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.account-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+/* ========================================
+   Accounts List (Accounts Tab)
+   ======================================== */
+.accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.account-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  transition: all var(--transition-normal);
+}
+
+.account-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-border-strong);
+}
+
+.account-item__main {
+  flex: 1;
+}
+
+.account-item__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.account-item__label {
+  font-weight: 600;
+  font-size: 1.0625rem;
+}
+
+.account-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.account-item__meta code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.1rem 0.3rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+.account-item__schedules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.account-item__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  align-self: center;
+}
+
+/* ========================================
+   Schedule List (Schedules Tab)
+   ======================================== */
+.schedules-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.schedule-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  transition: all var(--transition-normal);
+}
+
+.schedule-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.schedule-item--disabled {
+  opacity: 0.5;
+}
+
+.schedule-item__main {
+  flex: 1;
+}
+
+.schedule-item__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.schedule-item__cron {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.schedule-item__desc {
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.schedule-item__meta {
+  display: flex;
+  gap: var(--spacing-lg);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.schedule-item__meta code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.1rem 0.3rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+.schedule-item__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-self: center;
+}
+
+.schedule-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0.2rem 0.5rem;
+  background: rgba(130, 81, 238, 0.1);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--color-brand-light);
+}
+
+.schedule-tag--disabled {
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-muted);
+}
+
+.schedule-tag code {
+  background: none;
+  padding: 0;
+}
+
+/* ========================================
+   Forms
+   ======================================== */
+.modal__content--form {
+  max-width: 600px;
+  width: 90vw;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.form__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.form__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.form__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form__label--toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+.form__label--toggle input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-brand);
+}
+
+.form__input {
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  transition: all var(--transition-fast);
+}
+
+.form__input:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.form__input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.form__hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.form__hint code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.1rem 0.3rem;
+  border-radius: var(--radius-sm);
+}
+
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+/* ========================================
+   Spinner Variants
+   ======================================== */
+.loading__spinner--sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .tab-nav {
+    padding: 0 var(--spacing-md);
+    overflow-x: auto;
+  }
+  .tab-nav__btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    white-space: nowrap;
+  }
+  .account-item {
+    flex-direction: column;
+  }
+  .account-item__actions {
+    flex-direction: row;
+  }
+  .schedule-item {
+    flex-direction: column;
+  }
+  .schedule-item__actions {
+    align-self: flex-start;
+  }
+}

@@ -1,0 +1,12 @@
+services:
+  skedway:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./accounts.json:/app/accounts.json
+      - ./logs:/app/logs
+      - ./.env:/app/.env
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1

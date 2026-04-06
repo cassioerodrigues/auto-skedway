@@ -88,6 +88,7 @@ def attempt_single_booking(
     end_time: str,
     logger: ExecutionLogger,
     dry_run: bool = False,
+    site_params: dict | None = None,
 ) -> bool:
     """Attempt to book a single desk.
 
@@ -99,11 +100,12 @@ def attempt_single_booking(
         end_time: Booking end time.
         logger: ExecutionLogger instance.
         dry_run: If True, navigate but don't click submit.
+        site_params: Per-account site parameters.
 
     Returns:
         True if booking succeeded, False otherwise.
     """
-    url = build_booking_url(desk_id, days_ahead, start_time, end_time)
+    url = build_booking_url(desk_id, days_ahead, start_time, end_time, site_params=site_params)
     logger.info(f"Navigating to booking URL for desk {desk_id}")
     logger.debug(f"URL: {url}")
 
@@ -158,6 +160,7 @@ def book_desk(
     end_time: str,
     logger: ExecutionLogger,
     dry_run: bool = False,
+    site_params: dict | None = None,
 ) -> dict:
     """Attempt to book a desk from the priority list.
 
@@ -171,6 +174,7 @@ def book_desk(
         end_time: Booking end time.
         logger: ExecutionLogger instance.
         dry_run: If True, navigate but don't click submit.
+        site_params: Per-account site parameters.
 
     Returns:
         Dict with booking result details.
@@ -193,7 +197,8 @@ def book_desk(
                 time.sleep(delay)
 
             success = attempt_single_booking(
-                page, desk_id, days_ahead, start_time, end_time, logger, dry_run
+                page, desk_id, days_ahead, start_time, end_time, logger, dry_run,
+                site_params=site_params,
             )
 
             if success:

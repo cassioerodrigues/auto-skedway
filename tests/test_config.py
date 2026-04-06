@@ -38,7 +38,7 @@ class TestConfig:
         assert len(config.BOOKING_SUBMIT_SELECTORS) > 0
 
     def test_browser_channel(self):
-        assert config.BROWSER_CHANNEL == "msedge"
+        assert config.BROWSER_CHANNEL == "chromium"
 
     def test_viewport_dimensions(self):
         assert config.VIEWPORT_WIDTH >= 1024

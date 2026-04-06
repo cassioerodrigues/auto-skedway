@@ -1,0 +1,31 @@
+{
+  "accounts": [
+    {
+      "id": "1a662a44",
+      "label": "Cassio",
+      "enabled": true,
+      "preferences": {
+        "desks": [
+          "81502",
+          "81500"
+        ],
+        "days_ahead": 7,
+        "start_time": "08:30",
+        "end_time": "17:00",
+        "site_params": {
+          "base_type": "1",
+          "timezone": "America/Sao_Paulo",
+          "from": "/booking.php?baseType=1",
+          "action": "step1",
+          "company_site_id": "2210",
+          "building_id": "3933",
+          "floor_id": "5847",
+          "space_type": "0",
+          "order": "availabilityDesc",
+          "page": "1"
+        }
+      },
+      "schedules": []
+    }
+  ]
+}

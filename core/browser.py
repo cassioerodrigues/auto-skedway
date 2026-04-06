@@ -8,8 +8,8 @@ import config
 # Stealth instance (reusable)
 _stealth = Stealth(
     navigator_languages_override=("pt-BR", "pt", "en-US", "en"),
-    navigator_platform_override="Win32",
-    navigator_user_agent_override=config.EDGE_USER_AGENT,
+    navigator_platform_override="Linux x86_64",
+    navigator_user_agent_override=config.BROWSER_USER_AGENT,
     navigator_vendor_override="Google Inc.",
 )
 
@@ -20,7 +20,7 @@ def launch_browser(playwright: Playwright, debug: bool = False) -> Browser:
 
     browser = playwright.chromium.launch(
         channel=config.BROWSER_CHANNEL,
-        headless=False,
+        headless=not debug,
         slow_mo=slow_mo,
         args=[
             "--disable-blink-features=AutomationControlled",
@@ -38,7 +38,7 @@ def create_context(browser: Browser) -> BrowserContext:
     """Create browser context with realistic settings and stealth applied."""
     context = browser.new_context(
         viewport={"width": config.VIEWPORT_WIDTH, "height": config.VIEWPORT_HEIGHT},
-        user_agent=config.EDGE_USER_AGENT,
+        user_agent=config.BROWSER_USER_AGENT,
         locale="pt-BR",
         timezone_id="America/Sao_Paulo",
         permissions=["geolocation"],

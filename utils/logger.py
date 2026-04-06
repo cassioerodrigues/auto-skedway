@@ -31,9 +31,11 @@ class ColoredFormatter(logging.Formatter):
 class ExecutionLogger:
     """Manages text logging and screenshot capture for a single execution."""
 
-    def __init__(self, base_dir: str = "logs", debug: bool = False):
+    def __init__(self, base_dir: str = "logs", debug: bool = False, account_id: str | None = None):
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        self.log_dir = os.path.join(base_dir, self.timestamp)
+        folder_name = f"{self.timestamp}_{account_id}" if account_id else self.timestamp
+        self.log_dir = os.path.join(base_dir, folder_name)
+        self.account_id = account_id
         os.makedirs(self.log_dir, exist_ok=True)
 
         self.screenshot_counter = 0
@@ -114,6 +116,7 @@ class ExecutionLogger:
         duration = (datetime.now() - self.start_time).total_seconds()
         summary = {
             "execution_time": self.start_time.isoformat(),
+            "account_id": self.account_id,
             "target_date": target_date,
             "desks_attempted": desks_attempted,
             "result": result,

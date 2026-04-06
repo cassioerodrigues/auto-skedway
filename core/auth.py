@@ -49,16 +49,25 @@ def handle_mobile_warning(page, logger: ExecutionLogger):
         logger.debug("No mobile warning found — proceeding")
 
 
-def login(page, logger: ExecutionLogger) -> bool:
+def login(page, logger: ExecutionLogger, credentials: dict | None = None) -> bool:
     """Execute the login flow on Skedway.
 
     Args:
         page: Playwright page with stealth applied.
         logger: ExecutionLogger instance.
+        credentials: Dict with 'user' and 'passwd' keys. Falls back to env vars if None.
 
     Returns:
         True if login succeeded, False otherwise.
     """
+    import os
+    user = credentials["user"] if credentials else os.getenv("SKEDWAY_USER", "")
+    passwd = credentials["passwd"] if credentials else os.getenv("SKEDWAY_PASSWD", "")
+
+    if not user or not passwd:
+        logger.error("Missing credentials for login")
+        return False
+
     logger.info(f"Navigating to {config.LOGIN_URL}")
     page.goto(config.LOGIN_URL, wait_until="networkidle", timeout=config.PAGE_LOAD_TIMEOUT)
     logger.screenshot(page, "login_page")
@@ -78,7 +87,7 @@ def login(page, logger: ExecutionLogger) -> bool:
         return False
 
     logger.info("Filling email field")
-    human_type(page, email_selector, config.SKEDWAY_USER)
+    human_type(page, email_selector, user)
     human_delay(0.5, 1.0)
 
     logger.screenshot(page, "email_filled")
@@ -110,7 +119,7 @@ def login(page, logger: ExecutionLogger) -> bool:
         return False
 
     logger.info("Filling password field")
-    human_type(page, password_selector, config.SKEDWAY_PASSWD)
+    human_type(page, password_selector, passwd)
     human_delay(0.5, 1.5)
 
     logger.screenshot(page, "password_filled")

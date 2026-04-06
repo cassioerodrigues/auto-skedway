@@ -7,10 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# --- Credentials ---
-SKEDWAY_USER = os.getenv("SKEDWAY_USER")
-SKEDWAY_PASSWD = os.getenv("SKEDWAY_PASSWD")
-
 # --- URLs ---
 LOGIN_URL = "https://console.skedway.com/"
 BOOKING_BASE_URL = "https://volvo.skedway.com/booking-form.php"
@@ -20,17 +16,31 @@ DEFAULT_DAYS_AHEAD = 7
 DEFAULT_START_TIME = "08:30"
 DEFAULT_END_TIME = "17:00"
 
-# --- Skedway Site Parameters ---
-BOOKING_BASE_TYPE = "1"
-BOOKING_TIMEZONE = "America/Sao_Paulo"
-BOOKING_FROM = "/booking.php?baseType=1"
-BOOKING_ACTION = "step1"
-BOOKING_COMPANY_SITE_ID = "2210"
-BOOKING_BUILDING_ID = "3933"
-BOOKING_FLOOR_ID = "5847"
-BOOKING_SPACE_TYPE = "0"
-BOOKING_ORDER = "availabilityDesc"
-BOOKING_PAGE = "1"
+# --- Default Skedway Site Parameters (used if account doesn't specify) ---
+DEFAULT_SITE_PARAMS = {
+    "base_type": "1",
+    "timezone": "America/Sao_Paulo",
+    "from": "/booking.php?baseType=1",
+    "action": "step1",
+    "company_site_id": "2210",
+    "building_id": "3933",
+    "floor_id": "5847",
+    "space_type": "0",
+    "order": "availabilityDesc",
+    "page": "1",
+}
+
+# Legacy flat constants (kept for backward compatibility with tests)
+BOOKING_BASE_TYPE = DEFAULT_SITE_PARAMS["base_type"]
+BOOKING_TIMEZONE = DEFAULT_SITE_PARAMS["timezone"]
+BOOKING_FROM = DEFAULT_SITE_PARAMS["from"]
+BOOKING_ACTION = DEFAULT_SITE_PARAMS["action"]
+BOOKING_COMPANY_SITE_ID = DEFAULT_SITE_PARAMS["company_site_id"]
+BOOKING_BUILDING_ID = DEFAULT_SITE_PARAMS["building_id"]
+BOOKING_FLOOR_ID = DEFAULT_SITE_PARAMS["floor_id"]
+BOOKING_SPACE_TYPE = DEFAULT_SITE_PARAMS["space_type"]
+BOOKING_ORDER = DEFAULT_SITE_PARAMS["order"]
+BOOKING_PAGE = DEFAULT_SITE_PARAMS["page"]
 
 # --- Timeouts (seconds) ---
 PAGE_LOAD_TIMEOUT = 30_000      # 30s in ms (Playwright uses ms)
@@ -42,7 +52,7 @@ RETRY_DELAY_MIN = 3.0
 RETRY_DELAY_MAX = 5.0
 
 # --- Browser ---
-BROWSER_CHANNEL = "msedge"
+BROWSER_CHANNEL = "chromium"
 VIEWPORT_WIDTH = 1920
 VIEWPORT_HEIGHT = 1080
 SLOW_MO_DEFAULT = 50
@@ -90,20 +100,25 @@ BOOKING_SUBMIT_SELECTORS = [
 ]
 
 # --- User-Agent ---
-EDGE_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/146.0.0.0 Safari/537.36 "
-    "Edg/146.0.0.0"
+    "Chrome/146.0.0.0 Safari/537.36"
 )
 
 
 def validate_credentials():
-    """Validate that required environment variables are set."""
+    """Validate that required environment variables are set.
+    
+    DEPRECATED: Use account_manager for multi-account credential validation.
+    Kept for backward compatibility with legacy single-account mode.
+    """
+    user = os.getenv("SKEDWAY_USER")
+    passwd = os.getenv("SKEDWAY_PASSWD")
     missing = []
-    if not SKEDWAY_USER:
+    if not user:
         missing.append("SKEDWAY_USER")
-    if not SKEDWAY_PASSWD:
+    if not passwd:
         missing.append("SKEDWAY_PASSWD")
     if missing:
         print(f"ERROR: Missing environment variables: {', '.join(missing)}")
