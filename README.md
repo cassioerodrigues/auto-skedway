@@ -52,7 +52,19 @@ Accounts are managed via the web UI or directly in `accounts.json`:
         "desks": ["1234", "5678"],
         "days_ahead": 7,
         "start_time": "08:30",
-        "end_time": "17:00"
+        "end_time": "17:00",
+        "site_params": {
+          "base_type": "1",
+          "timezone": "America/Sao_Paulo",
+          "from": "/booking.php?baseType=1",
+          "action": "step1",
+          "company_site_id": "2210",
+          "building_id": "3933",
+          "floor_id": "5847",
+          "space_type": "0",
+          "order": "availabilityDesc",
+          "page": "1"
+        }
       },
       "schedules": [
         {
@@ -119,6 +131,19 @@ The system detects specific Skedway responses after each booking attempt:
 | Success confirmation | Returns success |
 | Any other failure | Retries the same desk (up to `RETRY_PER_DESK` times) |
 
+## Deployment (nginx subpath)
+
+To serve the app at a subpath like `example.com/skedway/`, use the provided `nginx-config.conf`:
+
+1. Copy the `location /skedway/ { ... }` block from `nginx-config.conf` into your nginx server block.
+2. Test and reload nginx:
+   ```bash
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+ProxyFix is already configured in `frontend/api.py` to handle forwarded headers correctly.
+
 ## Troubleshooting
 
 | Issue | Solution |
@@ -128,4 +153,4 @@ The system detects specific Skedway responses after each booking attempt:
 | Login fails | Check credentials in `.env` or via account settings |
 | Bot detected | Increase delays in `config.py` (SLOW_MO) |
 | Button not found | Check screenshots in logs — DOM may have changed |
-| Timeout | Increase timeout in account preferences |
+| Timeout | Increase `PAGE_LOAD_TIMEOUT` / `CLICK_TIMEOUT` in `config.py` |
