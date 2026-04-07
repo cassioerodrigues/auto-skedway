@@ -92,9 +92,16 @@ def _check_booking_result(page, logger: ExecutionLogger) -> str:
         logger.warning(f"Booking failed: {text}")
         return "failure"
 
-    logger.info("No error detected after booking — assuming success")
-    logger.screenshot(page, "assumed_success")
-    return "success"
+    # Authoritative check: redirect to success URL confirms booking
+    current_url = page.url
+    if current_url == config.BOOKING_SUCCESS_URL:
+        logger.info(f"Redirected to success page — booking confirmed")
+        logger.screenshot(page, "success_redirect")
+        return "success"
+
+    logger.warning(f"No success redirect detected (current URL: {current_url}) — marking as failure")
+    logger.screenshot(page, "no_success_redirect")
+    return "failure"
 
 
 def attempt_single_booking(

@@ -31,6 +31,20 @@ def _get_credentials(account_id: str) -> dict:
     return {"user": user, "passwd": passwd}
 
 
+def verify_credentials(user: str, passwd: str) -> list[str]:
+    """Verify credentials against all accounts.
+
+    Returns list of account IDs whose stored credentials match.
+    """
+    data = _read_accounts_file()
+    matched = []
+    for acc in data.get("accounts", []):
+        creds = _get_credentials(acc["id"])
+        if creds["user"] and creds["user"] == user and creds["passwd"] == passwd:
+            matched.append(acc["id"])
+    return matched
+
+
 def load_accounts() -> list[dict]:
     data = _read_accounts_file()
     accounts = []

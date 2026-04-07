@@ -11,14 +11,16 @@ import json
 import shutil
 import logging
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, Response, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Ensure project root is in path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import config
 from core import account_manager
 from core.scheduler import (
     init_scheduler, trigger_run, get_active_runs,
@@ -49,6 +51,38 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 logger = logging.getLogger(__name__)
+
+
+# ========================================
+# Authentication
+# ========================================
+
+def require_auth(f):
+    """HTTP Basic Auth decorator using account credentials from .env."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not auth.username or not auth.password:
+            return Response(
+                "Authentication required", 401,
+                {"WWW-Authenticate": 'Basic realm="Auto Skedway"'},
+            )
+        matched_ids = account_manager.verify_credentials(auth.username, auth.password)
+        if not matched_ids:
+            return Response(
+                "Invalid credentials", 401,
+                {"WWW-Authenticate": 'Basic realm="Auto Skedway"'},
+            )
+        g.auth_user = auth.username
+        g.auth_account_ids = matched_ids
+        g.is_admin = auth.username.lower() == config.ADMIN_EMAIL.lower()
+        return f(*args, **kwargs)
+    return decorated
+
+
+def _user_owns_account(account_id: str) -> bool:
+    """Check if the authenticated user owns the given account (or is admin)."""
+    return g.is_admin or account_id in g.auth_account_ids
 
 
 # ========================================
@@ -114,6 +148,7 @@ def get_execution_data(folder_path):
 # ========================================
 
 @app.route("/")
+@require_auth
 def index():
     return send_from_directory(FRONTEND_DIR, "index.html")
 
@@ -123,6 +158,7 @@ def index():
 # ========================================
 
 @app.route("/api/executions", methods=["GET"])
+@require_auth
 def get_executions():
     try:
         account_filter = request.args.get("account_id")
@@ -131,6 +167,9 @@ def get_executions():
             data = get_execution_data(folder)
             if data:
                 if account_filter and data.get("account_id") != account_filter:
+                    continue
+                # Filter by ownership (admin sees all)
+                if not g.is_admin and data.get("account_id") not in g.auth_account_ids:
                     continue
                 executions.append(data)
         
@@ -155,6 +194,7 @@ def get_executions():
 
 
 @app.route("/api/executions/<timestamp>", methods=["GET"])
+@require_auth
 def get_execution_details(timestamp):
     try:
         execution_folder = LOGS_DIR / timestamp
@@ -162,6 +202,9 @@ def get_execution_details(timestamp):
             return jsonify({"error": "Execution not found"}), 404
         summary_path = execution_folder / "summary.json"
         summary = read_json_file(summary_path) if summary_path.exists() else {}
+        # Check ownership
+        if not g.is_admin and summary.get("account_id") not in g.auth_account_ids:
+            return jsonify({"error": "Forbidden"}), 403
         log_path = execution_folder / "execution.log"
         execution_log = read_log_file(log_path) if log_path.exists() else ""
         screenshot_files = sorted([
@@ -175,6 +218,7 @@ def get_execution_details(timestamp):
 
 
 @app.route("/api/executions/<timestamp>/screenshots/<filename>", methods=["GET"])
+@require_auth
 def get_screenshot(timestamp, filename):
     try:
         screenshot_path = LOGS_DIR / timestamp / filename
@@ -189,6 +233,7 @@ def get_screenshot(timestamp, filename):
 
 
 @app.route("/api/executions/<timestamp>", methods=["DELETE"])
+@require_auth
 def delete_execution(timestamp):
     """Delete an execution log folder and all its contents (screenshots, logs)."""
     try:
@@ -198,6 +243,11 @@ def delete_execution(timestamp):
         # Validate that the folder is actually inside LOGS_DIR (path traversal prevention)
         if not execution_folder.resolve().parent == LOGS_DIR.resolve():
             return jsonify({"error": "Invalid path"}), 400
+        # Check ownership
+        summary_path = execution_folder / "summary.json"
+        summary = read_json_file(summary_path) if summary_path.exists() else {}
+        if not g.is_admin and summary.get("account_id") not in g.auth_account_ids:
+            return jsonify({"error": "Forbidden"}), 403
         shutil.rmtree(execution_folder)
         logger.info(f"Deleted execution log: {timestamp}")
         return jsonify({"message": "Execution deleted", "timestamp": timestamp})
@@ -211,12 +261,16 @@ def delete_execution(timestamp):
 # ========================================
 
 @app.route("/api/accounts", methods=["GET"])
+@require_auth
 def list_accounts():
     try:
         accounts = account_manager.load_accounts()
         # Strip credentials from response
         safe = []
         for acc in accounts:
+            # Filter by ownership (admin sees all)
+            if not g.is_admin and acc["id"] not in g.auth_account_ids:
+                continue
             a = dict(acc)
             a.pop("credentials", None)
             a["has_credentials"] = bool(
@@ -232,8 +286,11 @@ def list_accounts():
 
 
 @app.route("/api/accounts/<account_id>", methods=["GET"])
+@require_auth
 def get_account_endpoint(account_id):
     try:
+        if not _user_owns_account(account_id):
+            return jsonify({"error": "Forbidden"}), 403
         account = account_manager.get_account(account_id)
         if not account:
             return jsonify({"error": "Account not found"}), 404
@@ -249,6 +306,7 @@ def get_account_endpoint(account_id):
 
 
 @app.route("/api/accounts", methods=["POST"])
+@require_auth
 def create_account():
     try:
         data = request.get_json()
@@ -277,8 +335,11 @@ def create_account():
 
 
 @app.route("/api/accounts/<account_id>", methods=["PUT"])
+@require_auth
 def update_account_endpoint(account_id):
     try:
+        if not _user_owns_account(account_id):
+            return jsonify({"error": "Forbidden"}), 403
         data = request.get_json()
         if not data:
             return jsonify({"error": "Request body required"}), 400
@@ -312,8 +373,11 @@ def update_account_endpoint(account_id):
 
 
 @app.route("/api/accounts/<account_id>", methods=["DELETE"])
+@require_auth
 def delete_account_endpoint(account_id):
     try:
+        if not _user_owns_account(account_id):
+            return jsonify({"error": "Forbidden"}), 403
         success = account_manager.delete_account(account_id)
         if not success:
             return jsonify({"error": "Account not found"}), 404
@@ -329,8 +393,11 @@ def delete_account_endpoint(account_id):
 # ========================================
 
 @app.route("/api/accounts/<account_id>/schedules", methods=["GET"])
+@require_auth
 def list_schedules(account_id):
     try:
+        if not _user_owns_account(account_id):
+            return jsonify({"error": "Forbidden"}), 403
         account = account_manager.get_account(account_id)
         if not account:
             return jsonify({"error": "Account not found"}), 404
@@ -340,8 +407,11 @@ def list_schedules(account_id):
 
 
 @app.route("/api/accounts/<account_id>/schedules", methods=["POST"])
+@require_auth
 def create_schedule(account_id):
     try:
+        if not _user_owns_account(account_id):
+            return jsonify({"error": "Forbidden"}), 403
         data = request.get_json()
         if not data or not data.get("cron"):
             return jsonify({"error": "cron is required"}), 400
@@ -362,8 +432,11 @@ def create_schedule(account_id):
 
 
 @app.route("/api/accounts/<account_id>/schedules/<schedule_id>", methods=["PUT"])
+@require_auth
 def update_schedule_endpoint(account_id, schedule_id):
     try:
+        if not _user_owns_account(account_id):
+            return jsonify({"error": "Forbidden"}), 403
         data = request.get_json()
         if not data:
             return jsonify({"error": "Request body required"}), 400
@@ -379,8 +452,11 @@ def update_schedule_endpoint(account_id, schedule_id):
 
 
 @app.route("/api/accounts/<account_id>/schedules/<schedule_id>", methods=["DELETE"])
+@require_auth
 def delete_schedule_endpoint(account_id, schedule_id):
     try:
+        if not _user_owns_account(account_id):
+            return jsonify({"error": "Forbidden"}), 403
         success = account_manager.delete_schedule(account_id, schedule_id)
         if not success:
             return jsonify({"error": "Schedule not found"}), 404
@@ -395,8 +471,11 @@ def delete_schedule_endpoint(account_id, schedule_id):
 # ========================================
 
 @app.route("/api/accounts/<account_id>/run", methods=["POST"])
+@require_auth
 def run_account(account_id):
     try:
+        if not _user_owns_account(account_id):
+            return jsonify({"error": "Forbidden"}), 403
         result = trigger_run(account_id)
         if "error" in result:
             return jsonify(result), 409
@@ -406,11 +485,18 @@ def run_account(account_id):
 
 
 @app.route("/api/status", methods=["GET"])
+@require_auth
 def get_status():
     try:
+        active_runs = get_active_runs()
+        scheduled_jobs = get_scheduled_jobs()
+        # Filter by ownership (admin sees all)
+        if not g.is_admin:
+            active_runs = {k: v for k, v in active_runs.items() if k in g.auth_account_ids}
+            scheduled_jobs = [j for j in scheduled_jobs if j.get("account_id") in g.auth_account_ids]
         return jsonify({
-            "active_runs": get_active_runs(),
-            "scheduled_jobs": get_scheduled_jobs(),
+            "active_runs": active_runs,
+            "scheduled_jobs": scheduled_jobs,
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -430,6 +516,7 @@ def health_check():
 # ========================================
 
 @app.route("/<path:filename>")
+@require_auth
 def static_files(filename):
     return send_from_directory(FRONTEND_DIR, filename)
 

@@ -10,6 +10,10 @@ load_dotenv()
 # --- URLs ---
 LOGIN_URL = "https://console.skedway.com/"
 BOOKING_BASE_URL = "https://volvo.skedway.com/booking-form.php"
+BOOKING_SUCCESS_URL = "https://volvo.skedway.com/index.php"
+
+# --- Admin ---
+ADMIN_EMAIL = "cassio.rodrigues@volvo.com"
 
 # --- Booking Defaults ---
 DEFAULT_DAYS_AHEAD = 7
