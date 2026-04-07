@@ -272,6 +272,7 @@ def list_accounts():
             if not g.is_admin and acc["id"] not in g.auth_account_ids:
                 continue
             a = dict(acc)
+            a["user"] = acc.get("credentials", {}).get("user", "")
             a.pop("credentials", None)
             a["has_credentials"] = bool(
                 acc.get("credentials", {}).get("user")

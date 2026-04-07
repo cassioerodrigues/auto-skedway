@@ -12,35 +12,35 @@
   --panel-w: 520px;
 
   /* Background layers */
-  --bg:        #070B13;
-  --surface-1: #0C1120;
-  --surface-2: #101827;
-  --surface-3: #172035;
-  --surface-4: #1D2840;
+  --bg:        #F8F9FB;
+  --surface-1: #FFFFFF;
+  --surface-2: #F1F3F7;
+  --surface-3: #E8ECF2;
+  --surface-4: #DDE3EC;
 
   /* Borders */
-  --border:    rgba(255,255,255,0.07);
-  --border-md: rgba(255,255,255,0.12);
+  --border:    rgba(0,0,0,0.08);
+  --border-md: rgba(0,0,0,0.14);
 
   /* Amber accent */
-  --amber:     #F59E0B;
-  --amber-dim: rgba(245,158,11,0.12);
-  --amber-glow: rgba(245,158,11,0.25);
+  --amber:     #D97706;
+  --amber-dim: rgba(217,119,6,0.10);
+  --amber-glow: rgba(217,119,6,0.20);
 
   /* Status colors */
-  --green:     #34D399;
-  --green-dim: rgba(52,211,153,0.12);
-  --red:       #F87171;
-  --red-dim:   rgba(248,113,113,0.12);
-  --yellow:    #FCD34D;
-  --yellow-dim:rgba(252,211,77,0.12);
-  --blue:      #60A5FA;
-  --blue-dim:  rgba(96,165,250,0.12);
+  --green:     #059669;
+  --green-dim: rgba(5,150,105,0.10);
+  --red:       #DC2626;
+  --red-dim:   rgba(220,38,38,0.10);
+  --yellow:    #D97706;
+  --yellow-dim:rgba(217,119,6,0.10);
+  --blue:      #2563EB;
+  --blue-dim:  rgba(37,99,235,0.10);
 
   /* Typography */
-  --text:      #E2E8F0;
-  --text-2:    #94A3B8;
-  --text-3:    #4B5E78;
+  --text:      #0F172A;
+  --text-2:    #475569;
+  --text-3:    #94A3B8;
 
   /* Transitions */
   --t-fast: 130ms ease;
@@ -617,7 +617,7 @@ body {
 .detail-panel__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(7,11,19,0.7);
+  background: rgba(15,23,42,0.25);
   backdrop-filter: blur(4px);
 }
 
@@ -793,7 +793,7 @@ body {
 .modal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(7,11,19,0.8);
+  background: rgba(15,23,42,0.3);
   backdrop-filter: blur(6px);
 }
 
@@ -810,7 +810,7 @@ body {
   overflow: hidden;
   transform: scale(0.97) translateY(6px);
   transition: transform var(--t-slow);
-  box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.12);
 }
 .modal.open .modal__box {
   transform: scale(1) translateY(0);
