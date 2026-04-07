@@ -4,294 +4,288 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Auto Skedway</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <script>
-    // Detect if running under /skedway/ subpath and set API prefix
     const currentPath = window.location.pathname;
     const isSubpath = currentPath.startsWith('/skedway/');
     window.API_PREFIX = isSubpath ? '/skedway' : '';
-    console.log('API_PREFIX:', window.API_PREFIX, 'isSubpath:', isSubpath);
   </script>
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <header class="header">
-      <div class="header__content">
-        <h1 class="header__title">Auto Skedway</h1>
-        <p class="header__subtitle">Automated desk booking management</p>
-      </div>
-      <button id="refreshBtn" class="header__refresh">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
-        </svg>
-        Refresh
-      </button>
-    </header>
+  <div id="app">
 
-    <!-- Tab Navigation -->
-    <nav class="tab-nav">
-      <button class="tab-nav__btn active" data-tab="dashboard">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="7" height="9"></rect>
-          <rect x="14" y="3" width="7" height="5"></rect>
-          <rect x="14" y="12" width="7" height="9"></rect>
-          <rect x="3" y="16" width="7" height="5"></rect>
-        </svg>
-        Dashboard
-      </button>
-      <button class="tab-nav__btn" data-tab="accounts">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        Accounts
-      </button>
-      <button class="tab-nav__btn" data-tab="schedules">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        Schedules
-      </button>
-    </nav>
+    <!-- ═══════════════════════════════════
+         SIDEBAR
+    ════════════════════════════════════ -->
+    <aside id="sidebar">
 
-    <!-- Main Content -->
-    <main class="main">
-      <!-- ===== Dashboard Tab ===== -->
-      <div id="tab-dashboard" class="tab-content active">
-        <div class="filters-section">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-card__label">Total Executions</div>
-              <div class="stat-card__value" id="totalExecutions">-</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__label">Success</div>
-              <div class="stat-card__value stat-card__value--success" id="successCount">-</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__label">Failures</div>
-              <div class="stat-card__value stat-card__value--error" id="failureCount">-</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-card__label">Status</div>
-              <div class="stat-card__value" id="loadingStatus">-</div>
-            </div>
+      <!-- Sidebar header -->
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="sidebar-brand__icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <div class="sidebar-brand__text">
+            <span class="sidebar-brand__name">Skedway</span>
+            <span class="sidebar-brand__sub">Desk Automation</span>
           </div>
         </div>
-
-        <!-- Account Cards with Run Now -->
-        <div class="account-status-section">
-          <h2 class="section-title">Accounts</h2>
-          <div id="accountStatusCards" class="account-status-grid"></div>
-        </div>
-
-        <!-- Executions List -->
-        <div class="executions-section">
-          <div class="executions-header">
-            <h2 class="executions-title">Execution History</h2>
-            <div class="sort-controls">
-              <select id="accountFilter" class="sort-select">
-                <option value="">All Accounts</option>
-              </select>
-              <select id="sortSelect" class="sort-select">
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-              </select>
-            </div>
-          </div>
-          <div id="executionsList" class="executions-list">
-            <div class="loading">
-              <div class="loading__spinner"></div>
-              <p>Loading executions...</p>
-            </div>
-          </div>
-        </div>
+        <button id="refreshBtn" class="icon-btn" title="Refresh all data">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+        </button>
       </div>
 
-      <!-- ===== Accounts Tab ===== -->
-      <div id="tab-accounts" class="tab-content">
-        <div class="section-header">
-          <h2 class="section-title">Manage Accounts</h2>
-          <button id="addAccountBtn" class="btn btn--primary">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <!-- Accounts section -->
+      <section class="sidebar-section">
+        <div class="sidebar-section__head">
+          <span class="sidebar-section__title">Accounts</span>
+          <button id="addAccountBtn" class="add-btn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            New Account
+            Add
           </button>
         </div>
-        <div id="accountsList" class="accounts-list"></div>
-      </div>
+        <div id="accountStatusCards" class="accounts-list"></div>
+      </section>
 
-      <!-- ===== Schedules Tab ===== -->
-      <div id="tab-schedules" class="tab-content">
-        <div class="section-header">
-          <h2 class="section-title">Schedules</h2>
+      <!-- Schedules section -->
+      <section class="sidebar-section">
+        <div class="sidebar-section__head">
+          <span class="sidebar-section__title">Schedules</span>
+          <button class="add-btn" onclick="showScheduleModal()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add
+          </button>
         </div>
         <div id="schedulesList" class="schedules-list"></div>
+      </section>
+
+    </aside>
+
+    <!-- ═══════════════════════════════════
+         MAIN — Execution History
+    ════════════════════════════════════ -->
+    <main id="main">
+      <div class="main-topbar">
+        <div class="main-topbar__left">
+          <h1 class="main-topbar__title">Execution History</h1>
+        </div>
+        <div class="main-topbar__controls">
+          <select id="accountFilter" class="ctrl-select">
+            <option value="">All accounts</option>
+          </select>
+          <select id="sortSelect" class="ctrl-select">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="executionsList" class="exec-feed">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Loading…</span>
+        </div>
       </div>
     </main>
 
-    <!-- Detail Modal (Execution) -->
-    <div id="detailsModal" class="modal">
-      <div class="modal__backdrop"></div>
-      <div class="modal__content">
-        <div class="modal__header">
-          <h2 id="modalTitle" class="modal__title">Execution Details</h2>
-          <div class="modal__header-actions">
-            <button id="deleteExecutionBtn" class="btn btn--sm btn--danger" title="Delete execution">
-              🗑 Delete
-            </button>
-            <button id="modalCloseBtn" class="modal__close">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  </div><!-- /#app -->
+
+
+  <!-- ═══════════════════════════════════
+       DETAIL PANEL (slide-in from right)
+  ════════════════════════════════════ -->
+  <div id="detailsPanel" class="detail-panel">
+    <div id="detailBackdrop" class="detail-panel__backdrop"></div>
+    <div class="detail-panel__drawer">
+
+      <div class="detail-panel__header">
+        <h2 id="detailTitle" class="detail-panel__title">Execution Details</h2>
+        <div class="detail-panel__header-actions">
+          <button id="deleteExecutionBtn" class="icon-btn icon-btn--danger" title="Delete execution">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            </svg>
+          </button>
+          <button id="closePanelBtn" class="icon-btn" title="Close">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
-          </div>
-        </div>
-        <div class="modal__body">
-          <div class="detail-section">
-            <h3 class="detail-section__title">Summary</h3>
-            <div class="summary-grid" id="summaryGrid"></div>
-          </div>
-          <div class="detail-section">
-            <h3 class="detail-section__title">Screenshots</h3>
-            <div id="screenshotsContainer" class="screenshots-gallery"></div>
-          </div>
-          <div class="detail-section">
-            <h3 class="detail-section__title">Execution Log</h3>
-            <button id="toggleLogBtn" class="toggle-log-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-              Show Full Log
-            </button>
-            <pre id="executionLog" class="execution-log log-collapsed"></pre>
-          </div>
-          <div class="detail-section">
-            <h3 class="detail-section__title">Summary JSON</h3>
-            <button id="toggleJsonBtn" class="toggle-log-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-              Show JSON
-            </button>
-            <pre id="summaryJson" class="execution-log log-collapsed"></pre>
-          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Account Form Modal -->
-    <div id="accountModal" class="modal">
-      <div class="modal__backdrop"></div>
-      <div class="modal__content modal__content--form">
-        <div class="modal__header">
-          <h2 id="accountModalTitle" class="modal__title">New Account</h2>
-          <button id="accountModalCloseBtn" class="modal__close">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+      <div class="detail-panel__body">
+
+        <div class="detail-block">
+          <div class="detail-block__header">Summary</div>
+          <div id="summaryGrid" class="summary-grid"></div>
         </div>
-        <div class="modal__body">
-          <form id="accountForm" class="form">
-            <input type="hidden" id="accountFormId" />
-            <div class="form__group">
-              <label class="form__label">Account Name</label>
-              <input type="text" id="accountLabel" class="form__input" placeholder="Ex: John - Headquarters" required />
-            </div>
-            <div class="form__row">
-              <div class="form__group">
-                <label class="form__label">User (email)</label>
-                <input type="email" id="accountUser" class="form__input" placeholder="email@volvo.com" />
-              </div>
-              <div class="form__group">
-                <label class="form__label">Password</label>
-                <input type="password" id="accountPasswd" class="form__input" placeholder="••••••••" />
-              </div>
-            </div>
-            <div class="form__group">
-              <label class="form__label">Desks (IDs separated by comma)</label>
-              <input type="text" id="accountDesks" class="form__input" placeholder="1234, 5678, 9012" />
-            </div>
-            <div class="form__row">
-              <div class="form__group">
-                <label class="form__label">Days Ahead</label>
-                <input type="number" id="accountDaysAhead" class="form__input" value="7" min="0" max="30" />
-              </div>
-              <div class="form__group">
-                <label class="form__label">Start Time</label>
-                <input type="time" id="accountStartTime" class="form__input" value="08:30" />
-              </div>
-              <div class="form__group">
-                <label class="form__label">End Time</label>
-                <input type="time" id="accountEndTime" class="form__input" value="17:00" />
-              </div>
-            </div>
-            <div class="form__group">
-              <label class="form__label form__label--toggle">
-                <input type="checkbox" id="accountEnabled" checked />
-                <span>Active Account</span>
-              </label>
-            </div>
-            <div class="form__actions">
-              <button type="button" id="accountCancelBtn" class="btn btn--ghost">Cancel</button>
-              <button type="submit" class="btn btn--primary">Save</button>
-            </div>
-          </form>
+
+        <div class="detail-block">
+          <div class="detail-block__header">Screenshots</div>
+          <div id="screenshotsContainer" class="screenshots-grid"></div>
         </div>
+
+        <div class="detail-block">
+          <div class="detail-block__header">
+            Execution Log
+            <button id="toggleLogBtn" class="reveal-btn">Show</button>
+          </div>
+          <pre id="executionLog" class="log-pre log-collapsed"></pre>
+        </div>
+
+        <div class="detail-block">
+          <div class="detail-block__header">
+            Raw JSON
+            <button id="toggleJsonBtn" class="reveal-btn">Show</button>
+          </div>
+          <pre id="summaryJson" class="log-pre log-collapsed"></pre>
+        </div>
+
       </div>
     </div>
+  </div>
 
-    <!-- Schedule Form Modal -->
-    <div id="scheduleModal" class="modal">
-      <div class="modal__backdrop"></div>
-      <div class="modal__content modal__content--form">
-        <div class="modal__header">
-          <h2 id="scheduleModalTitle" class="modal__title">New Schedule</h2>
-          <button id="scheduleModalCloseBtn" class="modal__close">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="modal__body">
-          <form id="scheduleForm" class="form">
-            <input type="hidden" id="scheduleFormAccountId" />
-            <input type="hidden" id="scheduleFormId" />
-            <div class="form__group">
-              <label class="form__label">Account</label>
-              <select id="scheduleAccountSelect" class="form__input" required></select>
+
+  <!-- ═══════════════════════════════════
+       ACCOUNT MODAL
+  ════════════════════════════════════ -->
+  <div id="accountModal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__box">
+      <div class="modal__header">
+        <h3 id="accountModalTitle" class="modal__title">New Account</h3>
+        <button id="accountModalCloseBtn" class="icon-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        <form id="accountForm" class="form">
+          <input type="hidden" id="accountFormId" />
+
+          <div class="form-field">
+            <label class="form-label">Account Name</label>
+            <input type="text" id="accountLabel" class="form-input" placeholder="e.g. João — Headquarters" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label">Email</label>
+              <input type="email" id="accountUser" class="form-input" placeholder="email@company.com" />
             </div>
-            <div class="form__group">
-              <label class="form__label">Cron Expression (minute hour day month day_of_week)</label>
-              <input type="text" id="scheduleCron" class="form__input" placeholder="0 7 * * 1-5" required />
-              <small class="form__hint">Examples: <code>0 7 * * 1-5</code> (Mon-Fri 7am), <code>30 6 * * 1</code> (Mon 6:30am)</small>
+            <div class="form-field">
+              <label class="form-label">Password</label>
+              <input type="password" id="accountPasswd" class="form-input" placeholder="••••••••" />
             </div>
-            <div class="form__group">
-              <label class="form__label">Description</label>
-              <input type="text" id="scheduleDescription" class="form__input" placeholder="Ex: Weekdays at 7am" />
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Desk IDs <span class="form-label-hint">comma-separated</span></label>
+            <input type="text" id="accountDesks" class="form-input" placeholder="1234, 5678, 9012" />
+          </div>
+
+          <div class="form-row form-row--3">
+            <div class="form-field">
+              <label class="form-label">Days Ahead</label>
+              <input type="number" id="accountDaysAhead" class="form-input" value="7" min="0" max="30" />
             </div>
-            <div class="form__group">
-              <label class="form__label form__label--toggle">
-                <input type="checkbox" id="scheduleEnabled" checked />
-                <span>Active Schedule</span>
-              </label>
+            <div class="form-field">
+              <label class="form-label">Start Time</label>
+              <input type="time" id="accountStartTime" class="form-input" value="08:30" />
             </div>
-            <div class="form__actions">
-              <button type="button" id="scheduleCancelBtn" class="btn btn--ghost">Cancel</button>
-              <button type="submit" class="btn btn--primary">Save</button>
+            <div class="form-field">
+              <label class="form-label">End Time</label>
+              <input type="time" id="accountEndTime" class="form-input" value="17:00" />
             </div>
-          </form>
-        </div>
+          </div>
+
+          <div class="form-field">
+            <label class="toggle-label">
+              <input type="checkbox" id="accountEnabled" checked />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span class="toggle-text">Account active</span>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="accountCancelBtn" class="btn btn--ghost">Cancel</button>
+            <button type="submit" class="btn btn--primary">Save Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════
+       SCHEDULE MODAL
+  ════════════════════════════════════ -->
+  <div id="scheduleModal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__box">
+      <div class="modal__header">
+        <h3 id="scheduleModalTitle" class="modal__title">New Schedule</h3>
+        <button id="scheduleModalCloseBtn" class="icon-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        <form id="scheduleForm" class="form">
+          <input type="hidden" id="scheduleFormAccountId" />
+          <input type="hidden" id="scheduleFormId" />
+
+          <div class="form-field">
+            <label class="form-label">Account</label>
+            <select id="scheduleAccountSelect" class="form-input" required></select>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Cron Expression</label>
+            <input type="text" id="scheduleCron" class="form-input form-input--mono" placeholder="0 7 * * 1-5" required />
+            <span class="form-hint">e.g. <code>0 7 * * 1-5</code> = Mon–Fri at 7:00 am</span>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Description <span class="form-label-hint">optional</span></label>
+            <input type="text" id="scheduleDescription" class="form-input" placeholder="Weekdays at 7 am" />
+          </div>
+
+          <div class="form-field">
+            <label class="toggle-label">
+              <input type="checkbox" id="scheduleEnabled" checked />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span class="toggle-text">Schedule active</span>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="scheduleCancelBtn" class="btn btn--ghost">Cancel</button>
+            <button type="submit" class="btn btn--primary">Save Schedule</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

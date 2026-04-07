@@ -1,8 +1,8 @@
-// ========================================
-// Auto Skedway — Frontend App
-// ========================================
+// ═══════════════════════════════════════════════════════════
+// Auto Skedway — Frontend App (redesigned, single-page)
+// ═══════════════════════════════════════════════════════════
 
-// State
+// ─── State ──────────────────────────────────────────────────
 const state = {
   executions: [],
   accounts: [],
@@ -12,15 +12,10 @@ const state = {
   activeRuns: {},
 };
 
-// DOM cache
 const $ = (id) => document.getElementById(id);
 
-// ========================================
-// API Functions
-// ========================================
-
+// ─── API helpers ─────────────────────────────────────────────
 async function api(path, options = {}) {
-  // Add API_PREFIX if running under /skedway/
   const fullPath = (window.API_PREFIX || '') + path;
   const res = await fetch(fullPath, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
@@ -31,58 +26,26 @@ async function api(path, options = {}) {
   return data;
 }
 
-const fetchExecutions = () => api('/api/executions' + (state.accountFilter ? `?account_id=${state.accountFilter}` : ''));
+const fetchExecutions       = () => api('/api/executions' + (state.accountFilter ? `?account_id=${state.accountFilter}` : ''));
 const fetchExecutionDetails = (ts) => api(`/api/executions/${ts}`);
-const fetchAccounts = () => api('/api/accounts');
-const fetchStatus = () => api('/api/status');
-const createAccount = (data) => api('/api/accounts', { method: 'POST', body: JSON.stringify(data) });
-const updateAccount = (id, data) => api(`/api/accounts/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-const deleteAccount = (id) => api(`/api/accounts/${id}`, { method: 'DELETE' });
-const triggerRun = (id) => api(`/api/accounts/${id}/run`, { method: 'POST' });
-const createSchedule = (accountId, data) => api(`/api/accounts/${accountId}/schedules`, { method: 'POST', body: JSON.stringify(data) });
-const deleteSchedule = (accountId, schedId) => api(`/api/accounts/${accountId}/schedules/${schedId}`, { method: 'DELETE' });
-const updateScheduleApi = (accountId, schedId, data) => api(`/api/accounts/${accountId}/schedules/${schedId}`, { method: 'PUT', body: JSON.stringify(data) });
-const deleteExecution = (ts) => api(`/api/executions/${ts}`, { method: 'DELETE' });
+const fetchAccounts         = () => api('/api/accounts');
+const fetchStatus           = () => api('/api/status');
+const createAccount         = (data) => api('/api/accounts', { method: 'POST', body: JSON.stringify(data) });
+const updateAccount         = (id, data) => api(`/api/accounts/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+const deleteAccount         = (id) => api(`/api/accounts/${id}`, { method: 'DELETE' });
+const triggerRun            = (id) => api(`/api/accounts/${id}/run`, { method: 'POST' });
+const createSchedule        = (accountId, data) => api(`/api/accounts/${accountId}/schedules`, { method: 'POST', body: JSON.stringify(data) });
+const deleteSchedule        = (accountId, schedId) => api(`/api/accounts/${accountId}/schedules/${schedId}`, { method: 'DELETE' });
+const updateScheduleApi     = (accountId, schedId, data) => api(`/api/accounts/${accountId}/schedules/${schedId}`, { method: 'PUT', body: JSON.stringify(data) });
+const deleteExecution       = (ts) => api(`/api/executions/${ts}`, { method: 'DELETE' });
 
-// ========================================
-// Tab Navigation
-// ========================================
-
-function initTabs() {
-  document.querySelectorAll('.tab-nav__btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-nav__btn').forEach((b) => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
-      btn.classList.add('active');
-      $(`tab-${btn.dataset.tab}`).classList.add('active');
-
-      if (btn.dataset.tab === 'accounts') loadAccountsList();
-      if (btn.dataset.tab === 'schedules') loadSchedulesList();
-      if (btn.dataset.tab === 'dashboard') loadDashboard();
-    });
-  });
-}
-
-// ========================================
-// Dashboard
-// ========================================
-
-async function loadDashboard() {
-  try {
-    const [executions, accounts] = await Promise.all([fetchExecutions(), fetchAccounts()]);
-    state.executions = executions;
-    state.accounts = accounts;
-    renderExecutions(executions);
-    renderAccountStatusCards(accounts);
-    populateAccountFilter(accounts);
-    pollStatus();
-  } catch (e) {
-    console.error('Dashboard load error:', e);
-  }
-}
-
+// ─── Formatters ──────────────────────────────────────────────
 function formatDate(isoString) {
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(isoString));
+}
+
+function formatDateShort(isoString) {
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(isoString));
 }
 
 function formatDuration(seconds) {
@@ -91,129 +54,197 @@ function formatDuration(seconds) {
   return `${Math.floor(seconds / 60)}m ${(seconds % 60).toFixed(0)}s`;
 }
 
-function getStatusBadge(result, execution) {
-  // Check if execution is in progress
-  if (execution?.status === 'in_progress') {
-    return `<span class="badge badge--warning"><span class="loading__spinner loading__spinner--xs"></span>In Progress</span>`;
-  }
-  
-  const map = {
-    dry_run_success: { label: 'Dry Run', cls: 'success' },
-    success: { label: 'Success', cls: 'success' },
-    login_failed: { label: 'Login Failed', cls: 'error' },
-    failure: { label: 'Failure', cls: 'error' },
-    timeout: { label: 'Timeout', cls: 'error' },
-    error: { label: 'Error', cls: 'error' },
-  };
-  
-  // Handle the result field - can be null for old executions without status
-  const resultStr = result || execution?.result || 'Unknown';
-  const s = map[resultStr] || { label: resultStr, cls: 'warning' };
-  return `<span class="badge badge--${s.cls}"><span class="badge__dot"></span>${s.label}</span>`;
-}
-
 function formatNextRun(isoString) {
   if (!isoString) return '-';
   const dt = new Date(isoString);
-  const dateStr = dt.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  const timeStr = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  return `${dateStr} ${timeStr}`;
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+    dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function getInitials(label) {
+  return label.split(/[\s\-_]+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
+}
+
+function statusClass(result, status) {
+  if (status === 'in_progress') return 'in-progress';
+  const map = {
+    dry_run_success: 'success',
+    success: 'success',
+    login_failed: 'error',
+    failure: 'error',
+    timeout: 'error',
+    error: 'error',
+  };
+  return map[result] || 'warning';
+}
+
+function statusLabel(result, status) {
+  if (status === 'in_progress') return 'Running';
+  const map = {
+    dry_run_success: 'Dry Run',
+    success: 'Success',
+    login_failed: 'Login Failed',
+    failure: 'Failed',
+    timeout: 'Timeout',
+    error: 'Error',
+  };
+  return map[result] || result || 'Unknown';
+}
+
+// ─── Load all data ───────────────────────────────────────────
+async function loadAll() {
+  try {
+    const [executions, accounts] = await Promise.all([fetchExecutions(), fetchAccounts()]);
+    state.executions = executions;
+    state.accounts = accounts;
+    renderAccountStatusCards(accounts);
+    renderSchedulesList(accounts);
+    renderExecutions(executions);
+    populateAccountFilter(accounts);
+    pollStatus();
+  } catch (e) {
+    console.error('Load error:', e);
+  }
 }
 
 function populateAccountFilter(accounts) {
   const sel = $('accountFilter');
   const val = sel.value;
-  sel.innerHTML = '<option value="">All Accounts</option>';
+  sel.innerHTML = '<option value="">All accounts</option>';
   accounts.forEach((a) => {
     sel.innerHTML += `<option value="${a.id}">${a.label}</option>`;
   });
   sel.value = val;
 }
 
+// ─── Sidebar: Account cards ──────────────────────────────────
 function renderAccountStatusCards(accounts) {
   const container = $('accountStatusCards');
   if (!accounts.length) {
-    container.innerHTML = '<p class="empty-hint">No accounts configured. Go to Accounts tab to add one.</p>';
+    container.innerHTML = `<div class="empty-state" style="padding:20px 10px">
+      <span style="font-size:11px">No accounts yet.</span>
+    </div>`;
     return;
   }
   container.innerHTML = accounts.map((a) => {
     const running = state.activeRuns[a.id]?.status === 'running';
-    const statusCls = a.enabled ? 'active' : 'disabled';
+    const isEnabled = a.enabled !== false;
     return `
-      <div class="account-card account-card--${statusCls}">
-        <div class="account-card__header">
-          <span class="account-card__label">${a.label}</span>
-          <span class="badge badge--${a.enabled ? 'success' : 'warning'}">${a.enabled ? 'Active' : 'Inactive'}</span>
+    <div class="acct-card ${isEnabled ? 'acct-card--active' : 'acct-card--disabled'}">
+      <div class="acct-card__top">
+        <div class="acct-card__avatar">${getInitials(a.label)}</div>
+        <div class="acct-card__info">
+          <div class="acct-card__name" title="${a.label}">${a.label}</div>
+          <div class="acct-card__email">${a.user || 'No email set'}</div>
         </div>
-        <div class="account-card__info">
-          <span>Desks: ${(a.preferences?.desks || []).join(', ') || '-'}</span>
-          <span>Credentials: ${a.has_credentials ? '✓' : '✗'}</span>
-          <span>Next Run: ${formatNextRun(a.next_run)}</span>
+        <div class="acct-card__actions">
+          <button class="icon-action" onclick="editAccount('${a.id}')" title="Edit">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+          <button class="icon-action icon-action--danger" onclick="confirmDeleteAccount('${a.id}','${a.label}')" title="Delete">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+            </svg>
+          </button>
         </div>
-        <button class="btn btn--sm ${running ? 'btn--loading' : 'btn--accent'}" 
-                onclick="handleRunNow('${a.id}')" ${running || !a.enabled ? 'disabled' : ''}>
-          ${running ? '<span class="loading__spinner loading__spinner--sm"></span> Running...' : '▶ Run Now'}
+      </div>
+      <div class="acct-card__footer">
+        <span style="font-size:10.5px;color:var(--text-3)">Next: ${formatNextRun(a.next_run)}</span>
+        <button class="run-btn" onclick="handleRunNow('${a.id}')" ${running || !isEnabled ? 'disabled' : ''}>
+          ${running ? '<div class="spinner spinner--xs"></div> Running' : `<svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Now`}
         </button>
       </div>
-    `;
+    </div>`;
   }).join('');
 }
 
+// ─── Sidebar: Schedules ──────────────────────────────────────
+function renderSchedulesList(accounts) {
+  const list = $('schedulesList');
+  const all = [];
+  accounts.forEach((a) => {
+    (a.schedules || []).forEach((s) => all.push({ ...s, accountId: a.id, accountLabel: a.label }));
+  });
+
+  if (!all.length) {
+    list.innerHTML = `<div class="empty-state" style="padding:20px 10px">
+      <span style="font-size:11px">No schedules yet.</span>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = all.map((s) => `
+    <div class="sched-row ${s.enabled ? '' : 'sched-row--disabled'}">
+      <div class="sched-row__dot"></div>
+      <div class="sched-row__body">
+        <div class="sched-row__name" title="${s.accountLabel}">${s.description || s.accountLabel}</div>
+        <div class="sched-row__cron">${s.cron}</div>
+      </div>
+      <div class="sched-row__actions">
+        <button class="icon-action" onclick="toggleScheduleEnabled('${s.accountId}','${s.id}',${!s.enabled})" title="${s.enabled ? 'Disable' : 'Enable'}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            ${s.enabled
+              ? '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>'
+              : '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'}
+          </svg>
+        </button>
+        <button class="icon-action icon-action--danger" onclick="confirmDeleteSchedule('${s.accountId}','${s.id}')" title="Delete">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── Main: Executions feed ───────────────────────────────────
 function renderExecutions(executions) {
   const list = $('executionsList');
   if (!executions.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">📋</div><div class="empty-state__title">No Executions</div></div>`;
-    updateStats([]);
+    list.innerHTML = `<div class="empty-state">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text-3)">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <span>No executions found</span>
+    </div>`;
     return;
   }
+
   const sorted = [...executions].sort((a, b) => {
-    // In-progress executions first, then by date
-    const aInProgress = a.status === 'in_progress' ? 0 : 1;
-    const bInProgress = b.status === 'in_progress' ? 0 : 1;
-    if (aInProgress !== bInProgress) return aInProgress - bInProgress;
-    
+    const aIP = a.status === 'in_progress' ? 0 : 1;
+    const bIP = b.status === 'in_progress' ? 0 : 1;
+    if (aIP !== bIP) return aIP - bIP;
     const ta = new Date(a.execution_time), tb = new Date(b.execution_time);
     return state.sortOrder === 'newest' ? tb - ta : ta - tb;
   });
+
   list.innerHTML = sorted.map((e) => {
     const accountLabel = state.accounts.find((a) => a.id === e.account_id)?.label || e.account_id || '-';
+    const cls = statusClass(e.result, e.status);
+    const lbl = statusLabel(e.result, e.status);
+    const isRunning = e.status === 'in_progress';
     return `
-      <div class="execution-card" onclick="showExecutionDetails(${JSON.stringify(e).replace(/"/g, '&quot;')})">
-        <div class="execution-card__header">
-          <div>
-            <div class="execution-card__title">${formatDate(e.execution_time)}</div>
-            <div class="execution-card__time">${accountLabel}</div>
-          </div>
-          ${getStatusBadge(e.result, e)}
-        </div>
-        <div class="execution-card__details">
-          <div class="execution-detail"><div class="execution-detail__label">Target Date</div><div class="execution-detail__value">${e.target_date || '-'}</div></div>
-          <div class="execution-detail"><div class="execution-detail__label">Desk</div><div class="execution-detail__value">${e.booked_desk || '-'}</div></div>
-          <div class="execution-detail"><div class="execution-detail__label">Duration</div><div class="execution-detail__value">${formatDuration(e.duration_seconds)}</div></div>
-          <div class="execution-detail"><div class="execution-detail__label">Screenshots</div><div class="execution-detail__value">${e.screenshots || 0}</div></div>
-        </div>
-        <div class="execution-card__footer">
-          <div class="execution-card__screenshot-count">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
-            ${e.screenshots || 0} images
-          </div>
-          <div class="execution-card__actions">
-            <button class="btn btn--xs btn--danger" onclick="event.stopPropagation(); handleDeleteExecution('${e.timestamp}')" title="Delete">🗑</button>
-            <div class="execution-card__arrow">→</div>
-          </div>
-        </div>
-      </div>`;
+    <div class="exec-row exec-row--${cls}" onclick="showExecutionDetails(${JSON.stringify(e).replace(/"/g, '&quot;')})">
+      <div class="exec-row__indicator"></div>
+      <div class="exec-row__main">
+        <div class="exec-row__title">${accountLabel}</div>
+        <div class="exec-row__meta">${e.target_date ? `target ${e.target_date}` : ''}${e.booked_desk ? ` · desk ${e.booked_desk}` : ''}${e.duration_seconds ? ` · ${formatDuration(e.duration_seconds)}` : ''}</div>
+      </div>
+      <div class="exec-row__right">
+        <span class="exec-row__time">${formatDateShort(e.execution_time)}</span>
+        <span class="exec-chip exec-chip--${cls}">
+          ${isRunning ? '<div class="spinner spinner--xs"></div>' : ''} ${lbl}
+        </span>
+      </div>
+    </div>`;
   }).join('');
-  updateStats(executions);
 }
 
-function updateStats(executions) {
-  $('totalExecutions').textContent = executions.length;
-  $('successCount').textContent = executions.filter((e) => ['dry_run_success', 'success'].includes(e.result)).length;
-  $('failureCount').textContent = executions.filter((e) => ['login_failed', 'failure', 'error', 'timeout'].includes(e.result)).length;
-  $('loadingStatus').textContent = '✓ Loaded';
-}
-
+// ─── Run now ─────────────────────────────────────────────────
 async function handleRunNow(accountId) {
   try {
     await triggerRun(accountId);
@@ -225,6 +256,7 @@ async function handleRunNow(accountId) {
   }
 }
 
+// ─── Polling ─────────────────────────────────────────────────
 let _pollTimer = null;
 let _detailsPollTimer = null;
 
@@ -233,21 +265,19 @@ async function pollStatus() {
     const status = await fetchStatus();
     state.activeRuns = status.active_runs || {};
     renderAccountStatusCards(state.accounts);
-    
+
     const hasRunning = Object.values(state.activeRuns).some((r) => r.status === 'running');
-    
-    // Refresh executions to show in-progress ones in real-time
+
     if (hasRunning) {
       state.executions = await fetchExecutions();
       renderExecutions(state.executions);
     }
-    
+
     if (hasRunning && !_pollTimer) {
       _pollTimer = setInterval(pollStatus, 3000);
     } else if (!hasRunning && _pollTimer) {
       clearInterval(_pollTimer);
       _pollTimer = null;
-      // Refresh executions when run completes
       state.executions = await fetchExecutions();
       renderExecutions(state.executions);
     }
@@ -256,55 +286,62 @@ async function pollStatus() {
   }
 }
 
-// ========================================
-// Execution Detail Modal
-// ========================================
-
+// ─── Detail panel ────────────────────────────────────────────
 async function showExecutionDetails(execution) {
   state.selectedExecution = execution;
-  // Stop any existing polling before starting new detail view
-  if (_detailsPollTimer) {
-    clearInterval(_detailsPollTimer);
-    _detailsPollTimer = null;
-  }
+  if (_detailsPollTimer) { clearInterval(_detailsPollTimer); _detailsPollTimer = null; }
+
   const details = await fetchExecutionDetails(execution.timestamp);
   if (!details) return;
 
-  $('modalTitle').textContent = `Execution from ${formatDate(execution.execution_time)}`;
+  $('detailTitle').textContent = `${formatDate(execution.execution_time)}`;
 
-  const rc = ['dry_run_success', 'success'].includes(execution.result) ? 'summary-item__value--success'
-    : ['login_failed', 'failure', 'error'].includes(execution.result) ? 'summary-item__value--error' : 'summary-item__value--warning';
+  const cls = statusClass(execution.result, execution.status);
 
   $('summaryGrid').innerHTML = `
-    <div class="summary-item"><div class="summary-item__label">Result</div><div class="summary-item__value ${rc}">${execution.result}</div></div>
+    <div class="summary-item"><div class="summary-item__label">Result</div><div class="summary-item__value text-${cls === 'success' ? 'success' : cls === 'error' ? 'error' : 'warning'}">${statusLabel(execution.result, execution.status)}</div></div>
     <div class="summary-item"><div class="summary-item__label">Account</div><div class="summary-item__value">${execution.account_id || '-'}</div></div>
     <div class="summary-item"><div class="summary-item__label">Target Date</div><div class="summary-item__value">${execution.target_date || '-'}</div></div>
     <div class="summary-item"><div class="summary-item__label">Booked Desk</div><div class="summary-item__value">${execution.booked_desk || '-'}</div></div>
-    <div class="summary-item"><div class="summary-item__label">Desks Attempted</div><div class="summary-item__value">${(execution.desks_attempted || []).join(', ') || '-'}</div></div>
+    <div class="summary-item summary-item--wide"><div class="summary-item__label">Desks Attempted</div><div class="summary-item__value">${(execution.desks_attempted || []).join(', ') || '-'}</div></div>
     <div class="summary-item"><div class="summary-item__label">Duration</div><div class="summary-item__value">${formatDuration(execution.duration_seconds)}</div></div>
   `;
 
-  // Screenshots
   const sc = $('screenshotsContainer');
   if (!details.screenshot_files?.length) {
-    sc.innerHTML = '<p class="empty-hint">No screenshots available</p>';
+    sc.innerHTML = '<span class="text-muted" style="font-size:12px">No screenshots</span>';
   } else {
     sc.innerHTML = details.screenshot_files.map((f) => {
       const url = (window.API_PREFIX || '') + `/api/executions/${execution.timestamp}/screenshots/${f}`;
-      return `<div class="screenshot-item" onclick="openScreenshotModal('${url}','${f}')"><img src="${url}" alt="${f}" loading="lazy" /><div class="screenshot-item__label">${f}</div></div>`;
+      return `<figure class="screenshot-item" onclick="openScreenshotModal('${url}','${f}')">
+        <img src="${url}" alt="${f}" loading="lazy" />
+        <figcaption>${f}</figcaption>
+      </figure>`;
     }).join('');
   }
 
   $('executionLog').textContent = details.execution_log || 'Log not available';
   $('summaryJson').textContent = JSON.stringify(execution, null, 2);
 
-  $('detailsModal').classList.add('active');
+  // Ensure log/json start collapsed
+  $('executionLog').classList.add('log-collapsed');
+  $('summaryJson').classList.add('log-collapsed');
+  $('toggleLogBtn').textContent = 'Show';
+  $('toggleJsonBtn').textContent = 'Show';
+
+  openPanel();
   setupToggleButtons();
 
-  // Start auto-refresh if execution is in progress
-  if (execution.status === 'in_progress') {
-    startDetailsPolling(execution.timestamp);
-  }
+  if (execution.status === 'in_progress') startDetailsPolling(execution.timestamp);
+}
+
+function openPanel() {
+  $('detailsPanel').classList.add('open');
+}
+
+function closePanel() {
+  $('detailsPanel').classList.remove('open');
+  if (_detailsPollTimer) { clearInterval(_detailsPollTimer); _detailsPollTimer = null; }
 }
 
 function openScreenshotModal(url, filename) {
@@ -312,96 +349,25 @@ function openScreenshotModal(url, filename) {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'screenshotModal';
-    modal.className = 'screenshot-modal';
-    modal.innerHTML = `<div class="screenshot-modal__content"><img id="screenshotImage" class="screenshot-modal__image" /><button class="screenshot-modal__close">×</button></div>`;
+    modal.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(7,11,19,0.9);backdrop-filter:blur(8px);cursor:zoom-out';
+    modal.innerHTML = `<img id="screenshotImage" style="max-width:90vw;max-height:90vh;border-radius:8px;border:1px solid var(--border-md)" />`;
     document.body.appendChild(modal);
-    modal.querySelector('.screenshot-modal__close').onclick = () => modal.classList.remove('active');
-    modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('active'); };
+    modal.addEventListener('click', () => modal.remove());
   }
   $('screenshotImage').src = url;
-  modal.classList.add('active');
 }
 
 function setupToggleButtons() {
   const logBtn = $('toggleLogBtn');
   const jsonBtn = $('toggleJsonBtn');
-  if (logBtn) logBtn.onclick = () => toggleLog('executionLog');
-  if (jsonBtn) jsonBtn.onclick = () => toggleLog('summaryJson');
+  if (logBtn) logBtn.onclick = () => toggleReveal('executionLog', logBtn);
+  if (jsonBtn) jsonBtn.onclick = () => toggleReveal('summaryJson', jsonBtn);
 }
 
-function toggleLog(logId) {
-  const el = $(logId);
-  el.classList.toggle('log-collapsed');
-  el.classList.toggle('log-expanded');
-}
-
-function closeModal(modalId) {
-  $(modalId).classList.remove('active');
-  // Stop details polling when modal is closed
-  if (modalId === 'detailsModal' && _detailsPollTimer) {
-    clearInterval(_detailsPollTimer);
-    _detailsPollTimer = null;
-  }
-}
-
-async function startDetailsPolling(timestamp) {
-  if (_detailsPollTimer) clearInterval(_detailsPollTimer);
-  
-  _detailsPollTimer = setInterval(async () => {
-    try {
-      const execution = state.selectedExecution;
-      if (!execution || execution.timestamp !== timestamp) {
-        clearInterval(_detailsPollTimer);
-        _detailsPollTimer = null;
-        return;
-      }
-
-      const details = await fetchExecutionDetails(timestamp);
-      if (!details) return;
-
-      // Check if execution has completed
-      if (details.status && details.status !== 'in_progress') {
-        // Execution completed, stop polling
-        clearInterval(_detailsPollTimer);
-        _detailsPollTimer = null;
-        state.selectedExecution = { ...state.selectedExecution, ...details };
-      }
-
-      // Update execution log
-      const logElement = $('executionLog');
-      if (logElement) {
-        logElement.textContent = details.execution_log || 'Log not available';
-        // Auto-scroll to bottom
-        logElement.parentElement.scrollTop = logElement.parentElement.scrollHeight;
-      }
-
-      // Update screenshots if new ones appeared
-      const sc = $('screenshotsContainer');
-      if (sc && details.screenshot_files?.length) {
-        sc.innerHTML = details.screenshot_files.map((f) => {
-          const url = (window.API_PREFIX || '') + `/api/executions/${timestamp}/screenshots/${f}`;
-          return `<div class="screenshot-item" onclick="openScreenshotModal('${url}','${f}')"><img src="${url}" alt="${f}" loading="lazy" /><div class="screenshot-item__label">${f}</div></div>`;
-        }).join('');
-      }
-
-      // Update summary data
-      const rc = ['dry_run_success', 'success'].includes(details.result) ? 'summary-item__value--success'
-        : ['login_failed', 'failure', 'error'].includes(details.result) ? 'summary-item__value--error' : 'summary-item__value--warning';
-      
-      $('summaryGrid').innerHTML = `
-        <div class="summary-item"><div class="summary-item__label">Result</div><div class="summary-item__value ${rc}">${details.result || 'In Progress'}</div></div>
-        <div class="summary-item"><div class="summary-item__label">Account</div><div class="summary-item__value">${details.account_id || '-'}</div></div>
-        <div class="summary-item"><div class="summary-item__label">Target Date</div><div class="summary-item__value">${details.target_date || '-'}</div></div>
-        <div class="summary-item"><div class="summary-item__label">Booked Desk</div><div class="summary-item__value">${details.booked_desk || '-'}</div></div>
-        <div class="summary-item"><div class="summary-item__label">Desks Attempted</div><div class="summary-item__value">${(details.desks_attempted || []).join(', ') || '-'}</div></div>
-        <div class="summary-item"><div class="summary-item__label">Duration</div><div class="summary-item__value">${formatDuration(details.duration_seconds)}</div></div>
-      `;
-
-      $('summaryJson').textContent = JSON.stringify(details, null, 2);
-    } catch (e) {
-      console.error('Details polling error:', e);
-    }
-  }, 2000);
+function toggleReveal(elId, btn) {
+  const el = $(elId);
+  const collapsed = el.classList.toggle('log-collapsed');
+  btn.textContent = collapsed ? 'Show' : 'Hide';
 }
 
 async function confirmDeleteExecution() {
@@ -410,7 +376,7 @@ async function confirmDeleteExecution() {
   if (!confirm(`Delete this execution and all screenshots?\n\n${ts}`)) return;
   try {
     await deleteExecution(ts);
-    closeModal('detailsModal');
+    closePanel();
     state.executions = await fetchExecutions();
     renderExecutions(state.executions);
   } catch (e) {
@@ -418,66 +384,47 @@ async function confirmDeleteExecution() {
   }
 }
 
-async function handleDeleteExecution(ts) {
-  if (!confirm(`Delete this execution and all screenshots?\n\n${ts}`)) return;
-  try {
-    await deleteExecution(ts);
-    state.executions = await fetchExecutions();
-    renderExecutions(state.executions);
-  } catch (e) {
-    alert(`Error deleting: ${e.message}`);
-  }
+async function startDetailsPolling(timestamp) {
+  if (_detailsPollTimer) clearInterval(_detailsPollTimer);
+  _detailsPollTimer = setInterval(async () => {
+    try {
+      const execution = state.selectedExecution;
+      if (!execution || execution.timestamp !== timestamp) {
+        clearInterval(_detailsPollTimer); _detailsPollTimer = null; return;
+      }
+      const details = await fetchExecutionDetails(timestamp);
+      if (!details) return;
+
+      if (details.status && details.status !== 'in_progress') {
+        clearInterval(_detailsPollTimer); _detailsPollTimer = null;
+        state.selectedExecution = { ...state.selectedExecution, ...details };
+      }
+
+      const logEl = $('executionLog');
+      if (logEl) {
+        logEl.textContent = details.execution_log || 'Log not available';
+        if (!logEl.classList.contains('log-collapsed')) logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      const sc = $('screenshotsContainer');
+      if (sc && details.screenshot_files?.length) {
+        sc.innerHTML = details.screenshot_files.map((f) => {
+          const url = (window.API_PREFIX || '') + `/api/executions/${timestamp}/screenshots/${f}`;
+          return `<figure class="screenshot-item" onclick="openScreenshotModal('${url}','${f}')">
+            <img src="${url}" alt="${f}" loading="lazy" />
+            <figcaption>${f}</figcaption>
+          </figure>`;
+        }).join('');
+      }
+
+      $('summaryJson').textContent = JSON.stringify(details, null, 2);
+    } catch (e) {
+      console.error('Details polling error:', e);
+    }
+  }, 2000);
 }
 
-// ========================================
-// Accounts Management
-// ========================================
-
-async function loadAccountsList() {
-  try {
-    state.accounts = await fetchAccounts();
-    renderAccountsList(state.accounts);
-  } catch (e) {
-    console.error('Error loading accounts:', e);
-  }
-}
-
-function renderAccountsList(accounts) {
-  const list = $('accountsList');
-  if (!accounts.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">👤</div><div class="empty-state__title">No Accounts</div><div class="empty-state__text">Click "New Account" to add one</div></div>`;
-    return;
-  }
-  list.innerHTML = accounts.map((a) => `
-    <div class="account-item">
-      <div class="account-item__main">
-        <div class="account-item__header">
-          <span class="account-item__label">${a.label}</span>
-          ${getStatusBadge(a.enabled ? 'success' : 'warning')}
-        </div>
-        <div class="account-item__meta">
-          <span>ID: <code>${a.id}</code></span>
-          <span>Desks: ${(a.preferences?.desks || []).join(', ') || '-'}</span>
-          <span>Time: ${a.preferences?.start_time || '08:30'} - ${a.preferences?.end_time || '17:00'}</span>
-          <span>Days Ahead: ${a.preferences?.days_ahead ?? 7}</span>
-          <span>Credentials: ${a.has_credentials ? '✓ Configured' : '✗ Not configured'}</span>
-        </div>
-        <div class="account-item__schedules">
-          ${(a.schedules || []).map((s) => `
-            <span class="schedule-tag ${s.enabled ? '' : 'schedule-tag--disabled'}">
-              <code>${s.cron}</code> ${s.description ? `— ${s.description}` : ''}
-            </span>
-          `).join('') || '<span class="empty-hint">No schedules</span>'})
-        </div>
-      </div>
-      <div class="account-item__actions">
-        <button class="btn btn--sm btn--ghost" onclick="editAccount('${a.id}')">Edit</button>
-        <button class="btn btn--sm btn--danger" onclick="confirmDeleteAccount('${a.id}', '${a.label}')">Delete</button>
-      </div>
-    </div>
-  `).join('');
-}
-
+// ─── Account modal ───────────────────────────────────────────
 function showAccountModal(account = null) {
   $('accountModalTitle').textContent = account ? 'Edit Account' : 'New Account';
   $('accountFormId').value = account?.id || '';
@@ -489,25 +436,23 @@ function showAccountModal(account = null) {
   $('accountStartTime').value = account?.preferences?.start_time || '08:30';
   $('accountEndTime').value = account?.preferences?.end_time || '17:00';
   $('accountEnabled').checked = account?.enabled ?? true;
-  $('accountUser').placeholder = account ? 'Leave blank to keep current' : 'email@volvo.com';
+  $('accountUser').placeholder = account ? 'Leave blank to keep current' : 'email@company.com';
   $('accountPasswd').placeholder = account ? 'Leave blank to keep current' : '••••••••';
-  $('accountModal').classList.add('active');
+  $('accountModal').classList.add('open');
 }
 
-async function editAccount(id) {
+function editAccount(id) {
   const acc = state.accounts.find((a) => a.id === id);
   showAccountModal(acc);
 }
 
 async function confirmDeleteAccount(id, label) {
-  if (confirm(`Are you sure you want to delete the account "${label}"?`)) {
-    try {
-      await deleteAccount(id);
-      loadAccountsList();
-      loadDashboard();
-    } catch (e) {
-      alert(`Error: ${e.message}`);
-    }
+  if (!confirm(`Delete account "${label}"?`)) return;
+  try {
+    await deleteAccount(id);
+    await loadAll();
+  } catch (e) {
+    alert(`Error: ${e.message}`);
   }
 }
 
@@ -529,78 +474,18 @@ async function handleAccountSubmit(e) {
 
   try {
     if (id) {
-      await api(`/api/accounts/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      await updateAccount(id, data);
     } else {
       await createAccount(data);
     }
     closeModal('accountModal');
-    loadAccountsList();
-    loadDashboard();
+    await loadAll();
   } catch (e) {
     alert(`Error: ${e.message}`);
   }
 }
 
-// ========================================
-// Schedules Management
-// ========================================
-
-async function loadSchedulesList() {
-  try {
-    state.accounts = await fetchAccounts();
-    renderSchedulesList(state.accounts);
-  } catch (e) {
-    console.error('Error loading schedules:', e);
-  }
-}
-
-function renderSchedulesList(accounts) {
-  const list = $('schedulesList');
-  const allSchedules = [];
-  accounts.forEach((a) => {
-    (a.schedules || []).forEach((s) => {
-      allSchedules.push({ ...s, accountId: a.id, accountLabel: a.label });
-    });
-  });
-
-  // Add schedule button
-  const headerHtml = `
-    <div class="section-header" style="margin-bottom: 1rem;">
-      <span>${allSchedules.length} Schedule(s)</span>
-      <button class="btn btn--primary btn--sm" onclick="showScheduleModal()">
-        + New Schedule
-      </button>
-    </div>
-  `;
-
-  if (!allSchedules.length) {
-    list.innerHTML = headerHtml + `<div class="empty-state"><div class="empty-state__icon">⏰</div><div class="empty-state__title">No Schedules</div><div class="empty-state__text">Add a schedule to run automatically</div></div>`;
-    return;
-  }
-
-  list.innerHTML = headerHtml + allSchedules.map((s) => `
-    <div class="schedule-item ${s.enabled ? '' : 'schedule-item--disabled'}">
-      <div class="schedule-item__main">
-        <div class="schedule-item__header">
-          <span class="schedule-item__cron"><code>${s.cron}</code></span>
-          ${s.description ? `<span class="schedule-item__desc">${s.description}</span>` : ''}
-          ${getStatusBadge(s.enabled ? 'success' : 'warning')}
-        </div>
-        <div class="schedule-item__meta">
-          <span>Account: <strong>${s.accountLabel}</strong></span>
-          <span>ID: <code>${s.id}</code></span>
-        </div>
-      </div>
-      <div class="schedule-item__actions">
-        <button class="btn btn--sm btn--ghost" onclick="toggleScheduleEnabled('${s.accountId}','${s.id}',${!s.enabled})">
-          ${s.enabled ? 'Disable' : 'Enable'}
-        </button>
-        <button class="btn btn--sm btn--danger" onclick="confirmDeleteSchedule('${s.accountId}','${s.id}')">Delete</button>
-      </div>
-    </div>
-  `).join('');
-}
-
+// ─── Schedule modal ──────────────────────────────────────────
 function showScheduleModal() {
   $('scheduleModalTitle').textContent = 'New Schedule';
   $('scheduleFormAccountId').value = '';
@@ -608,10 +493,9 @@ function showScheduleModal() {
   $('scheduleCron').value = '';
   $('scheduleDescription').value = '';
   $('scheduleEnabled').checked = true;
-  // Populate account select
   const sel = $('scheduleAccountSelect');
   sel.innerHTML = state.accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('');
-  $('scheduleModal').classList.add('active');
+  $('scheduleModal').classList.add('open');
 }
 
 async function handleScheduleSubmit(e) {
@@ -625,7 +509,7 @@ async function handleScheduleSubmit(e) {
   try {
     await createSchedule(accountId, data);
     closeModal('scheduleModal');
-    loadSchedulesList();
+    await loadAll();
   } catch (e) {
     alert(`Error: ${e.message}`);
   }
@@ -634,64 +518,68 @@ async function handleScheduleSubmit(e) {
 async function toggleScheduleEnabled(accountId, schedId, enabled) {
   try {
     await updateScheduleApi(accountId, schedId, { enabled });
-    loadSchedulesList();
+    await loadAll();
   } catch (e) {
     alert(`Error: ${e.message}`);
   }
 }
 
 async function confirmDeleteSchedule(accountId, schedId) {
-  if (confirm('Delete this schedule?')) {
-    try {
-      await deleteSchedule(accountId, schedId);
-      loadSchedulesList();
-    } catch (e) {
-      alert(`Error: ${e.message}`);
-    }
+  if (!confirm('Delete this schedule?')) return;
+  try {
+    await deleteSchedule(accountId, schedId);
+    await loadAll();
+  } catch (e) {
+    alert(`Error: ${e.message}`);
   }
 }
 
-// ========================================
-// Event Listeners & Init
-// ========================================
+function closeModal(id) {
+  $(id).classList.remove('open');
+}
 
+// ─── Event listeners ─────────────────────────────────────────
 function initEventListeners() {
-  $('modalCloseBtn').addEventListener('click', () => closeModal('detailsModal'));
-  $('detailsModal').querySelector('.modal__backdrop').addEventListener('click', () => closeModal('detailsModal'));
-  $('deleteExecutionBtn').addEventListener('click', () => confirmDeleteExecution());
+  // Detail panel
+  $('closePanelBtn').addEventListener('click', closePanel);
+  $('detailBackdrop').addEventListener('click', closePanel);
+  $('deleteExecutionBtn').addEventListener('click', confirmDeleteExecution);
+
+  // Account modal
   $('accountModalCloseBtn').addEventListener('click', () => closeModal('accountModal'));
   $('accountModal').querySelector('.modal__backdrop').addEventListener('click', () => closeModal('accountModal'));
   $('accountCancelBtn').addEventListener('click', () => closeModal('accountModal'));
+
+  // Schedule modal
   $('scheduleModalCloseBtn').addEventListener('click', () => closeModal('scheduleModal'));
   $('scheduleModal').querySelector('.modal__backdrop').addEventListener('click', () => closeModal('scheduleModal'));
   $('scheduleCancelBtn').addEventListener('click', () => closeModal('scheduleModal'));
 
+  // Keyboard
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      document.querySelectorAll('.modal.active').forEach((m) => m.classList.remove('active'));
+      closePanel();
+      document.querySelectorAll('.modal.open').forEach((m) => m.classList.remove('open'));
     }
   });
 
-  $('refreshBtn').addEventListener('click', loadDashboard);
+  // Controls
+  $('refreshBtn').addEventListener('click', loadAll);
   $('sortSelect').addEventListener('change', (e) => { state.sortOrder = e.target.value; renderExecutions(state.executions); });
   $('accountFilter').addEventListener('change', async (e) => {
     state.accountFilter = e.target.value;
     state.executions = await fetchExecutions();
     renderExecutions(state.executions);
   });
+
+  // Forms
   $('addAccountBtn').addEventListener('click', () => showAccountModal());
   $('accountForm').addEventListener('submit', handleAccountSubmit);
   $('scheduleForm').addEventListener('submit', handleScheduleSubmit);
 }
 
-// Init
+// ─── Boot ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  initTabs();
   initEventListeners();
-  loadDashboard();
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  initializeEventListeners();
-  loadAndRenderExecutions();
+  loadAll();
 });
