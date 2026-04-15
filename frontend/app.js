@@ -245,6 +245,11 @@ function renderExecutions(executions) {
         <span class="exec-chip exec-chip--${cls}">
           ${isRunning ? '<div class="spinner spinner--xs"></div>' : ''} ${lbl}
         </span>
+        ${isRunning ? '' : `<button class="icon-action icon-action--danger" onclick="event.stopPropagation(); confirmDeleteExecutionFromList('${e.timestamp}')" title="Delete execution">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          </svg>
+        </button>`}
       </div>
     </div>`;
   }).join('');
@@ -383,6 +388,18 @@ async function confirmDeleteExecution() {
   try {
     await deleteExecution(ts);
     closePanel();
+    state.executions = await fetchExecutions();
+    renderExecutions(state.executions);
+  } catch (e) {
+    alert(`Error deleting: ${e.message}`);
+  }
+}
+
+async function confirmDeleteExecutionFromList(ts) {
+  if (!confirm(`Delete this execution and all screenshots?\n\n${ts}`)) return;
+  try {
+    await deleteExecution(ts);
+    if (state.selectedExecution?.timestamp === ts) closePanel();
     state.executions = await fetchExecutions();
     renderExecutions(state.executions);
   } catch (e) {
