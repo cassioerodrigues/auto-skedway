@@ -43,10 +43,11 @@ class ExecutionLogger:
         self.screenshots = []
         self.start_time = datetime.now()
 
-        # Setup logger
-        self.logger = logging.getLogger("auto-skedway")
+        # Setup logger — unique name per instance to isolate concurrent executions
+        logger_name = f"auto-skedway.{self.timestamp}.{account_id or 'anon'}.{id(self)}"
+        self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(logging.DEBUG if debug else logging.INFO)
-        self.logger.handlers.clear()
+        self.logger.propagate = False
 
         # File handler
         log_file = os.path.join(self.log_dir, "execution.log")
@@ -184,7 +185,17 @@ class ExecutionLogger:
         self.info(f"Summary saved: {filepath}")
         return summary
 
+    def close(self):
+        """Remove and close all handlers on this logger to release file descriptors."""
+        for h in list(self.logger.handlers):
+            self.logger.removeHandler(h)
+            try:
+                h.close()
+            except Exception:
+                pass
+
     def finalize(self, result: str = "completed"):
         """Log final execution status."""
         duration = (datetime.now() - self.start_time).total_seconds()
         self.info(f"Execution {result} in {duration:.1f}s — {len(self.screenshots)} screenshots captured")
+        self.close()
