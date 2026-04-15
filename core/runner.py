@@ -30,9 +30,10 @@ def run_booking(account: dict, debug: bool = False, dry_run: bool = False) -> di
     end_time = prefs.get("end_time", "17:00")
     site_params = prefs.get("site_params")
     timeout = prefs.get("timeout", 300)
+    capture_screenshots = prefs.get("capture_screenshots", True)
 
     log_base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
-    logger = ExecutionLogger(base_dir=log_base, debug=debug, account_id=account_id)
+    logger = ExecutionLogger(base_dir=log_base, debug=debug, account_id=account_id, capture_screenshots=capture_screenshots)
 
     logger.info(f"Starting booking for account: {account.get('label', account_id)}")
     logger.info(f"Desks (priority order): {desk_ids}")

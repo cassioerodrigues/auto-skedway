@@ -322,6 +322,7 @@ def create_account():
             end_time=data.get("end_time", "17:00"),
             site_params=data.get("site_params"),
             enabled=data.get("enabled", True),
+            capture_screenshots=data.get("capture_screenshots", True),
         )
 
         # Set credentials if provided
@@ -352,7 +353,7 @@ def update_account_endpoint(account_id):
             updates["enabled"] = data["enabled"]
 
         prefs = {}
-        for key in ("desks", "days_ahead", "start_time", "end_time", "site_params"):
+        for key in ("desks", "days_ahead", "start_time", "end_time", "site_params", "capture_screenshots"):
             if key in data:
                 prefs[key] = data[key]
         if prefs:

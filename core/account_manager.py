@@ -71,6 +71,7 @@ def add_account(
     end_time: str = config.DEFAULT_END_TIME,
     site_params: dict | None = None,
     enabled: bool = True,
+    capture_screenshots: bool = True,
 ) -> dict:
     account_id = str(uuid.uuid4())[:8]
     account = {
@@ -83,6 +84,7 @@ def add_account(
             "start_time": start_time,
             "end_time": end_time,
             "site_params": site_params or dict(config.DEFAULT_SITE_PARAMS),
+            "capture_screenshots": capture_screenshots,
         },
         "schedules": [],
     }

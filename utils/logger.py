@@ -31,11 +31,12 @@ class ColoredFormatter(logging.Formatter):
 class ExecutionLogger:
     """Manages text logging and screenshot capture for a single execution."""
 
-    def __init__(self, base_dir: str = "logs", debug: bool = False, account_id: str | None = None):
+    def __init__(self, base_dir: str = "logs", debug: bool = False, account_id: str | None = None, capture_screenshots: bool = True):
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         folder_name = f"{self.timestamp}_{account_id}" if account_id else self.timestamp
         self.log_dir = os.path.join(base_dir, folder_name)
         self.account_id = account_id
+        self.capture_screenshots = capture_screenshots
         os.makedirs(self.log_dir, exist_ok=True)
 
         self.screenshot_counter = 0
@@ -98,6 +99,10 @@ class ExecutionLogger:
         self.screenshot_counter += 1
         filename = f"{self.screenshot_counter:02d}_{label}.png"
         filepath = os.path.join(self.log_dir, filename)
+
+        if not self.capture_screenshots:
+            self.debug(f"Screenshot skipped (disabled): {label}")
+            return ""
 
         try:
             page.screenshot(path=filepath, full_page=True)

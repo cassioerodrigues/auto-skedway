@@ -442,6 +442,7 @@ function showAccountModal(account = null) {
   $('accountStartTime').value = account?.preferences?.start_time || '08:30';
   $('accountEndTime').value = account?.preferences?.end_time || '17:00';
   $('accountEnabled').checked = account?.enabled ?? true;
+  $('accountCaptureScreenshots').checked = account?.preferences?.capture_screenshots ?? true;
   $('accountUser').placeholder = account ? 'Leave blank to keep current' : 'email@company.com';
   $('accountPasswd').placeholder = account ? 'Leave blank to keep current' : '••••••••';
   $('accountModal').classList.add('open');
@@ -472,6 +473,7 @@ async function handleAccountSubmit(e) {
     start_time: $('accountStartTime').value || '08:30',
     end_time: $('accountEndTime').value || '17:00',
     enabled: $('accountEnabled').checked,
+    capture_screenshots: $('accountCaptureScreenshots').checked,
   };
   const user = $('accountUser').value;
   const passwd = $('accountPasswd').value;
