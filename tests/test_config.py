@@ -2,7 +2,6 @@
 
 import sys
 import os
-from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -43,18 +42,3 @@ class TestConfig:
     def test_viewport_dimensions(self):
         assert config.VIEWPORT_WIDTH >= 1024
         assert config.VIEWPORT_HEIGHT >= 768
-
-    @patch.dict(os.environ, {"SKEDWAY_USER": "test@test.com", "SKEDWAY_PASSWD": "pass123"})
-    def test_validate_credentials_success(self):
-        # Reload config to pick up env vars
-        import importlib
-        importlib.reload(config)
-        config.validate_credentials()  # Should not raise
-
-    @patch.dict(os.environ, {}, clear=True)
-    def test_validate_credentials_missing(self):
-        import importlib
-        importlib.reload(config)
-        import pytest
-        with pytest.raises(SystemExit):
-            config.validate_credentials()

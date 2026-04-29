@@ -1,7 +1,5 @@
 """Auto Skedway — Configuration constants and settings."""
 
-import os
-import sys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -110,23 +108,3 @@ BROWSER_USER_AGENT = (
     "Chrome/146.0.0.0 Safari/537.36 "
     "Edg/146.0.0.0"
 )
-
-
-def validate_credentials():
-    """Validate that required environment variables are set.
-    
-    DEPRECATED: Use account_manager for multi-account credential validation.
-    Kept for backward compatibility with legacy single-account mode.
-    """
-    user = os.getenv("SKEDWAY_USER")
-    passwd = os.getenv("SKEDWAY_PASSWD")
-    missing = []
-    if not user:
-        missing.append("SKEDWAY_USER")
-    if not passwd:
-        missing.append("SKEDWAY_PASSWD")
-    if missing:
-        print(f"ERROR: Missing environment variables: {', '.join(missing)}")
-        print("Set them in your environment or create a .env file.")
-        print("See .env.example for reference.")
-        sys.exit(1)
