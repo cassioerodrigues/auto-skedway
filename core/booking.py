@@ -37,7 +37,7 @@ def _check_booking_result(page, logger: ExecutionLogger) -> str:
         'desk_unavailable' — this desk is taken (try next desk)
         'failure' — generic failure
     """
-    human_delay(2.0, 4.0)
+    human_delay(1.0, 1.5)
 
     page_text = ""
     try:
@@ -134,7 +134,7 @@ def attempt_single_booking(
         logger.screenshot(page, f"error_load_{desk_id}")
         return "failure"
 
-    human_delay(1.5, 3.0)
+    human_delay(0.8, 1.5)
     random_mouse_movement(page)
     logger.screenshot(page, f"booking_page_{desk_id}")
 
@@ -162,7 +162,7 @@ def attempt_single_booking(
 
     # Wait and check result
     try:
-        page.wait_for_load_state("networkidle", timeout=config.PAGE_LOAD_TIMEOUT)
+        page.wait_for_load_state("networkidle", timeout=20000)
     except Exception:
         logger.debug("Page load after booking click may be slow")
 

@@ -50,8 +50,8 @@ CLICK_TIMEOUT = 10_000          # 10s in ms
 LOGIN_TIMEOUT = 15_000          # 15s in ms
 TOTAL_TIMEOUT = 300             # 5 min in seconds
 RETRY_PER_DESK = 2
-RETRY_DELAY_MIN = 3.0
-RETRY_DELAY_MAX = 5.0
+RETRY_DELAY_MIN = 1.5
+RETRY_DELAY_MAX = 2.5
 
 # --- Browser ---
 BROWSER_CHANNEL = "msedge"

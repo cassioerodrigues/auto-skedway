@@ -75,7 +75,7 @@ def run_booking(account: dict, debug: bool = False, dry_run: bool = False) -> di
         if not login_success:
             logger.warning("Login failed — retrying...")
             page.goto("about:blank")
-            time.sleep(2)
+            time.sleep(1)
             login_success = login(page, logger, credentials=creds)
 
         if not login_success:

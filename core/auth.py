@@ -43,7 +43,7 @@ def handle_mobile_warning(page, logger: ExecutionLogger):
             logger.info("Mobile warning detected — clicking 'Continue anyway'")
             logger.screenshot(page, "continue_warning")
             human_click(page, config.CONTINUE_BUTTON_SELECTOR)
-            human_delay(1.0, 2.0)
+            human_delay(0.5, 1.0)
             logger.info("Mobile warning dismissed")
     except Exception:
         logger.debug("No mobile warning found — proceeding")
@@ -103,7 +103,7 @@ def login(page, logger: ExecutionLogger, credentials: dict | None = None) -> boo
     human_click(page, next_selector)
 
     # Wait for password field to appear
-    human_delay(1.5, 3.0)
+    human_delay(1.0, 1.5)
     try:
         page.wait_for_load_state("networkidle", timeout=config.LOGIN_TIMEOUT)
     except Exception:
@@ -137,7 +137,7 @@ def login(page, logger: ExecutionLogger, credentials: dict | None = None) -> boo
     # Wait for navigation after login
     try:
         page.wait_for_load_state("networkidle", timeout=config.LOGIN_TIMEOUT)
-        human_delay(2.0, 3.0)
+        human_delay(1.0, 1.5)
     except Exception as e:
         logger.warning(f"Page load after login may be slow: {e}")
 
