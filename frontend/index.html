@@ -74,6 +74,21 @@
         <div id="schedulesList" class="schedules-list"></div>
       </section>
 
+      <!-- Holidays section (admin-only) -->
+      <section id="holidaysSection" class="sidebar-section" hidden>
+        <div class="sidebar-section__head">
+          <span class="sidebar-section__title">Feriados</span>
+          <button id="newHolidayBtn" class="add-btn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add
+          </button>
+        </div>
+        <div id="holidaysList" class="schedules-list"></div>
+      </section>
+
     </aside>
 
     <!-- ═══════════════════════════════════
@@ -292,6 +307,40 @@
           <div class="form-actions">
             <button type="button" id="scheduleCancelBtn" class="btn btn--ghost">Cancel</button>
             <button type="submit" class="btn btn--primary">Save Schedule</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       HOLIDAY MODAL
+  ════════════════════════════════════ -->
+  <div id="holidayModal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__box">
+      <div class="modal__header">
+        <h3 id="holidayModalTitle" class="modal__title">Novo Feriado</h3>
+        <button id="holidayModalCloseBtn" class="icon-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal__body">
+        <form id="holidayForm" class="form">
+          <div class="form-field">
+            <label class="form-label">Data</label>
+            <input type="date" id="holidayDate" class="form-input" required />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Descrição</label>
+            <input type="text" id="holidayDescription" class="form-input" placeholder="Ex: Natal" required />
+          </div>
+          <div class="form-actions">
+            <button type="button" id="holidayCancelBtn" class="btn btn--ghost">Cancelar</button>
+            <button type="submit" class="btn btn--primary">Salvar</button>
           </div>
         </form>
       </div>

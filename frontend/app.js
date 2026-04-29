@@ -10,6 +10,9 @@ const state = {
   accountFilter: '',
   selectedExecution: null,
   activeRuns: {},
+  isAdmin: false,
+  holidays: [],
+  holidayFormId: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -38,6 +41,10 @@ const createSchedule        = (accountId, data) => api(`/api/accounts/${accountI
 const deleteSchedule        = (accountId, schedId) => api(`/api/accounts/${accountId}/schedules/${schedId}`, { method: 'DELETE' });
 const updateScheduleApi     = (accountId, schedId, data) => api(`/api/accounts/${accountId}/schedules/${schedId}`, { method: 'PUT', body: JSON.stringify(data) });
 const deleteExecution       = (ts) => api(`/api/executions/${ts}`, { method: 'DELETE' });
+const fetchHolidays         = () => api('/api/holidays');
+const createHoliday         = (data) => api('/api/holidays', { method: 'POST', body: JSON.stringify(data) });
+const updateHolidayApi      = (id, data) => api(`/api/holidays/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+const deleteHoliday         = (id) => api(`/api/holidays/${id}`, { method: 'DELETE' });
 
 // ─── Formatters ──────────────────────────────────────────────
 function formatDate(isoString) {
@@ -101,7 +108,8 @@ async function loadAll() {
     renderSchedulesList(accounts);
     renderExecutions(executions);
     populateAccountFilter(accounts);
-    pollStatus();
+    await pollStatus();
+    if (state.isAdmin) await loadHolidays();
   } catch (e) {
     console.error('Load error:', e);
   }
@@ -271,10 +279,113 @@ async function handleRunNow(accountId) {
 let _pollTimer = null;
 let _detailsPollTimer = null;
 
+function applyAdminVisibility() {
+  const section = $('holidaysSection');
+  if (state.isAdmin) {
+    section.removeAttribute('hidden');
+  } else {
+    section.setAttribute('hidden', '');
+  }
+}
+
+async function loadHolidays() {
+  if (!state.isAdmin) return;
+  try {
+    const data = await fetchHolidays();
+    state.holidays = data.holidays || [];
+    renderHolidaysList();
+  } catch (e) {
+    console.error('Holiday load error:', e);
+  }
+}
+
+function renderHolidaysList() {
+  const list = $('holidaysList');
+  if (!state.holidays.length) {
+    list.innerHTML = `<div class="empty-state" style="padding:20px 10px">
+      <span style="font-size:11px">Nenhum feriado cadastrado.</span>
+    </div>`;
+    return;
+  }
+  list.innerHTML = state.holidays.map((h) => {
+    const dateParts = h.date.split('-');
+    const dateFormatted = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+    return `
+    <div class="sched-row">
+      <div class="sched-row__dot" style="background:var(--blue)"></div>
+      <div class="sched-row__body">
+        <div class="sched-row__name" title="${h.description}">${h.description}</div>
+        <div class="sched-row__cron">${dateFormatted}</div>
+      </div>
+      <div class="sched-row__actions">
+        <button class="icon-action" onclick="showHolidayModal(${JSON.stringify(h).replace(/"/g, '&quot;')})" title="Editar">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+        <button class="icon-action icon-action--danger" onclick="confirmDeleteHoliday('${h.id}')" title="Deletar">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          </svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showHolidayModal(holiday = null) {
+  state.holidayFormId = holiday?.id || null;
+  $('holidayModalTitle').textContent = holiday ? 'Editar Feriado' : 'Novo Feriado';
+  $('holidayDate').value = holiday?.date || '';
+  $('holidayDescription').value = holiday?.description || '';
+  $('holidayModal').classList.add('open');
+}
+
+async function handleHolidaySubmit(e) {
+  e.preventDefault();
+  const data = {
+    date: $('holidayDate').value,
+    description: $('holidayDescription').value,
+  };
+  try {
+    if (state.holidayFormId) {
+      await updateHolidayApi(state.holidayFormId, data);
+    } else {
+      await createHoliday(data);
+    }
+    closeModal('holidayModal');
+    await loadHolidays();
+  } catch (err) {
+    const msg = err.message || '';
+    if (msg === 'forbidden' || msg.includes('HTTP 403')) {
+      alert('Apenas o admin pode editar feriados');
+    } else if (msg.includes('already exists')) {
+      alert('Já existe um feriado nessa data');
+    } else if (msg.toLowerCase().includes('past') || msg.toLowerCase().includes('invalid date') || msg.includes('HTTP 400')) {
+      alert('Data inválida (não pode ser passada)');
+    } else {
+      alert(`Erro: ${msg}`);
+    }
+  }
+}
+
+async function confirmDeleteHoliday(id) {
+  if (!confirm('Deletar este feriado?')) return;
+  try {
+    await deleteHoliday(id);
+    await loadHolidays();
+  } catch (e) {
+    alert(`Erro: ${e.message}`);
+  }
+}
+
 async function pollStatus() {
   try {
     const status = await fetchStatus();
     state.activeRuns = status.active_runs || {};
+    state.isAdmin = status.is_admin || false;
+    applyAdminVisibility();
     renderAccountStatusCards(state.accounts);
 
     const hasRunning = Object.values(state.activeRuns).some((r) => r.status === 'running');
@@ -626,6 +737,13 @@ function initEventListeners() {
   $('addAccountBtn').addEventListener('click', () => showAccountModal());
   $('accountForm').addEventListener('submit', handleAccountSubmit);
   $('scheduleForm').addEventListener('submit', handleScheduleSubmit);
+
+  // Holiday modal
+  $('newHolidayBtn').addEventListener('click', () => showHolidayModal());
+  $('holidayModalCloseBtn').addEventListener('click', () => closeModal('holidayModal'));
+  $('holidayModal').querySelector('.modal__backdrop').addEventListener('click', () => closeModal('holidayModal'));
+  $('holidayCancelBtn').addEventListener('click', () => closeModal('holidayModal'));
+  $('holidayForm').addEventListener('submit', handleHolidaySubmit);
 }
 
 // ─── Boot ────────────────────────────────────────────────────
