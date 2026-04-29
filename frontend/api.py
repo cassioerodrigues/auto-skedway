@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import config
 from core import account_manager
+from core import holiday_manager
 from core.scheduler import (
     init_scheduler, trigger_run, get_active_runs,
     reload_jobs, get_scheduled_jobs, get_next_run_by_account, shutdown_scheduler,
@@ -499,7 +500,79 @@ def get_status():
         return jsonify({
             "active_runs": active_runs,
             "scheduled_jobs": scheduled_jobs,
+            "is_admin": g.is_admin,
         })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ========================================
+# Holiday Routes
+# ========================================
+
+@app.route("/api/holidays", methods=["GET"])
+@require_auth
+def list_holidays_endpoint():
+    try:
+        return jsonify({"holidays": holiday_manager.list_holidays()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/holidays", methods=["POST"])
+@require_auth
+def create_holiday():
+    if not g.is_admin:
+        return jsonify({"error": "forbidden"}), 403
+    try:
+        data = request.get_json(silent=True) or {}
+        if not data.get("date") or not data.get("description"):
+            return jsonify({"error": "date and description are required"}), 400
+        holiday = holiday_manager.add_holiday(data["date"], data["description"])
+        return jsonify({"holiday": holiday}), 201
+    except ValueError as e:
+        msg = str(e)
+        if "already exists" in msg:
+            return jsonify({"error": msg}), 409
+        return jsonify({"error": msg}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/holidays/<holiday_id>", methods=["PUT"])
+@require_auth
+def update_holiday_endpoint(holiday_id):
+    if not g.is_admin:
+        return jsonify({"error": "forbidden"}), 403
+    try:
+        data = request.get_json(silent=True) or {}
+        holiday = holiday_manager.update_holiday(
+            holiday_id,
+            date_str=data.get("date"),
+            description=data.get("description"),
+        )
+        return jsonify({"holiday": holiday})
+    except KeyError as e:
+        return jsonify({"error": str(e)}), 404
+    except ValueError as e:
+        msg = str(e)
+        if "already exists" in msg:
+            return jsonify({"error": msg}), 409
+        return jsonify({"error": msg}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/holidays/<holiday_id>", methods=["DELETE"])
+@require_auth
+def delete_holiday_endpoint(holiday_id):
+    if not g.is_admin:
+        return jsonify({"error": "forbidden"}), 403
+    try:
+        success = holiday_manager.delete_holiday(holiday_id)
+        if not success:
+            return jsonify({"error": "Holiday not found"}), 404
+        return jsonify({"status": "deleted"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
