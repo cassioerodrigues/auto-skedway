@@ -1,9 +1,14 @@
 """Auto Skedway — Configuration constants and settings."""
 
+import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# --- Paths ---
+_BASE_DIR = Path(__file__).parent
+HOLIDAYS_FILE = Path(os.getenv("HOLIDAYS_FILE", str(_BASE_DIR / "holidays.json")))
 
 # --- URLs ---
 LOGIN_URL = "https://console.skedway.com/"

@@ -2,11 +2,13 @@
 
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from datetime import date, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR, EVENT_JOB_MISSED
 
 from core.account_manager import load_accounts, get_account
+from core.holiday_manager import is_holiday
 from core.runner import run_booking
 
 logger = logging.getLogger("auto-skedway.scheduler")
@@ -43,6 +45,12 @@ def _execute_job(account_id: str):
 
     if not account.get("enabled", True):
         logger.info(f"Account {account_id} is disabled — skipping")
+        return
+
+    days_ahead = account.get("preferences", {}).get("days_ahead", 7)
+    target_date = date.today() + timedelta(days=days_ahead)
+    if is_holiday(target_date):
+        logger.info(f"Skipping run for {account_id}: target date {target_date} is a holiday")
         return
 
     _active_runs[account_id] = {"status": "running", "account_id": account_id}
