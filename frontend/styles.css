@@ -1030,6 +1030,145 @@ select.form-input { appearance: none; cursor: pointer; }
 .text-muted   { color: var(--text-3); }
 .font-mono    { font-family: 'DM Mono', monospace; }
 
+/* ─── MODAL SCHEDULES SUBSECTION ───────────────────────────── */
+.modal__schedules {
+  border: 1px solid var(--border-md);
+  border-radius: 9px;
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal__schedules legend {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0 4px;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.schedules-inline {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.schedules-inline__empty {
+  font-size: 12px;
+  color: var(--text-3);
+  padding: 4px 0;
+}
+
+.schedules-inline__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+
+.schedules-inline__item:hover {
+  background: var(--surface-3);
+  border-color: var(--border);
+}
+
+.schedules-inline__item--disabled {
+  opacity: 0.4;
+}
+
+.schedules-inline__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+}
+
+.schedules-inline__item--disabled .schedules-inline__dot {
+  background: var(--text-3);
+}
+
+.schedules-inline__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.schedules-inline__desc {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.schedules-inline__cron {
+  font-family: 'DM Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.schedules-inline__actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+
+.schedules-inline__item:hover .schedules-inline__actions {
+  opacity: 1;
+}
+
+.btn--small {
+  padding: 5px 11px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-md);
+  background: transparent;
+  color: var(--text-2);
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  align-self: flex-start;
+}
+
+.btn--small:hover {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border-color: rgba(245,158,11,0.3);
+}
+
+.schedule-inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-md);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.schedule-inline-form .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 /* ─── RESPONSIVE ────────────────────────────────────────── */
 @media (max-width: 768px) {
   #app {

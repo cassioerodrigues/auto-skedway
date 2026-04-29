@@ -13,6 +13,7 @@ const state = {
   isAdmin: false,
   holidays: [],
   holidayFormId: null,
+  editingScheduleId: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -105,7 +106,6 @@ async function loadAll() {
     state.executions = executions;
     state.accounts = accounts;
     renderAccountStatusCards(accounts);
-    renderSchedulesList(accounts);
     renderExecutions(executions);
     populateAccountFilter(accounts);
     await pollStatus();
@@ -167,52 +167,6 @@ function renderAccountStatusCards(accounts) {
       </div>
     </div>`;
   }).join('');
-}
-
-// ─── Sidebar: Schedules ──────────────────────────────────────
-function renderSchedulesList(accounts) {
-  const list = $('schedulesList');
-  const all = [];
-  accounts.forEach((a) => {
-    (a.schedules || []).forEach((s) => all.push({ ...s, accountId: a.id, accountLabel: a.label }));
-  });
-
-  if (!all.length) {
-    list.innerHTML = `<div class="empty-state" style="padding:20px 10px">
-      <span style="font-size:11px">No schedules yet.</span>
-    </div>`;
-    return;
-  }
-
-  list.innerHTML = all.map((s) => `
-    <div class="sched-row ${s.enabled ? '' : 'sched-row--disabled'}">
-      <div class="sched-row__dot"></div>
-      <div class="sched-row__body">
-        <div class="sched-row__name" title="${s.accountLabel}">${s.description || s.accountLabel}</div>
-        <div class="sched-row__cron">${s.cron}</div>
-      </div>
-      <div class="sched-row__actions">
-        <button class="icon-action" onclick="toggleScheduleEnabled('${s.accountId}','${s.id}',${!s.enabled})" title="${s.enabled ? 'Disable' : 'Enable'}">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            ${s.enabled
-              ? '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>'
-              : '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'}
-          </svg>
-        </button>
-        <button class="icon-action" onclick="editSchedule('${s.accountId}','${s.id}')" title="Edit">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-        </button>
-        <button class="icon-action icon-action--danger" onclick="confirmDeleteSchedule('${s.accountId}','${s.id}')" title="Delete">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-  `).join('');
 }
 
 // ─── Main: Executions feed ───────────────────────────────────
@@ -573,6 +527,19 @@ function showAccountModal(account = null) {
   $('accountCaptureScreenshots').checked = account?.preferences?.capture_screenshots ?? true;
   $('accountUser').placeholder = account ? 'Leave blank to keep current' : 'email@company.com';
   $('accountPasswd').placeholder = account ? 'Leave blank to keep current' : '••••••••';
+
+  hideScheduleInlineForm();
+  if (account?.id) {
+    $('accountSchedulesEmptyHint').hidden = true;
+    $('accountSchedulesList').hidden = false;
+    $('addScheduleInlineBtn').hidden = false;
+    renderAccountSchedulesInline(account);
+  } else {
+    $('accountSchedulesEmptyHint').hidden = false;
+    $('accountSchedulesList').hidden = true;
+    $('addScheduleInlineBtn').hidden = true;
+  }
+
   $('accountModal').classList.add('open');
 }
 
@@ -621,77 +588,114 @@ async function handleAccountSubmit(e) {
   }
 }
 
-// ─── Schedule modal ──────────────────────────────────────────
-function showScheduleModal(schedule = null) {
-  $('scheduleModalTitle').textContent = schedule ? 'Edit Schedule' : 'New Schedule';
-  $('scheduleFormId').value = schedule?.id || '';
-  $('scheduleFormAccountId').value = schedule?.accountId || '';
-  $('scheduleCron').value = schedule?.cron || '';
-  $('scheduleDescription').value = schedule?.description || '';
-  $('scheduleEnabled').checked = schedule?.enabled ?? true;
-  const sel = $('scheduleAccountSelect');
-  sel.innerHTML = state.accounts.map((a) => `<option value="${a.id}">${a.label}</option>`).join('');
-  if (schedule) {
-    sel.value = schedule.accountId;
-    sel.disabled = true;
-  } else {
-    sel.disabled = false;
-  }
-  $('scheduleModal').classList.add('open');
-}
-
-function editSchedule(accountId, schedId) {
-  const account = state.accounts.find(a => a.id === accountId);
-  const schedule = (account?.schedules || []).find(s => s.id === schedId);
-  if (!schedule) return;
-  showScheduleModal({ ...schedule, accountId });
-}
-
-async function handleScheduleSubmit(e) {
-  e.preventDefault();
-  const cronValue = $('scheduleCron').value.trim();
-  if (!/^(\S+\s+){4}\S+$/.test(cronValue)) {
-    alert('Invalid cron expression. Use 5 fields, e.g. "0 7 * * 1-5".');
-    $('scheduleCron').focus();
+// ─── Inline schedule CRUD (inside Account Modal) ─────────────
+function renderAccountSchedulesInline(account) {
+  const list = $('accountSchedulesList');
+  const schedules = account.schedules || [];
+  if (!schedules.length) {
+    list.innerHTML = `<li class="schedules-inline__empty">Nenhum agendamento ainda.</li>`;
     return;
   }
-  const schedId = $('scheduleFormId').value;
-  const accountId = $('scheduleAccountSelect').value;
-  const editAccountId = $('scheduleFormAccountId').value;
+  list.innerHTML = schedules.map((s) => `
+    <li class="schedules-inline__item ${s.enabled ? '' : 'schedules-inline__item--disabled'}">
+      <div class="schedules-inline__dot"></div>
+      <div class="schedules-inline__body">
+        <span class="schedules-inline__desc">${s.description || '—'}</span>
+        <span class="schedules-inline__cron">${s.cron}</span>
+      </div>
+      <div class="schedules-inline__actions">
+        <button class="icon-action" onclick="inlineToggleSchedule('${account.id}','${s.id}',${!s.enabled})" title="${s.enabled ? 'Desativar' : 'Ativar'}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            ${s.enabled
+              ? '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>'
+              : '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'}
+          </svg>
+        </button>
+        <button class="icon-action" onclick="inlineEditSchedule('${account.id}','${s.id}')" title="Editar">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+        <button class="icon-action icon-action--danger" onclick="inlineDeleteSchedule('${account.id}','${s.id}')" title="Deletar">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          </svg>
+        </button>
+      </div>
+    </li>
+  `).join('');
+}
+
+function hideScheduleInlineForm() {
+  $('scheduleInlineForm').hidden = true;
+  $('scheduleInlineCron').value = '';
+  $('scheduleInlineDescription').value = '';
+  $('scheduleInlineEnabled').checked = true;
+  state.editingScheduleId = null;
+}
+
+async function inlineToggleSchedule(accountId, schedId, enabled) {
+  try {
+    await updateScheduleApi(accountId, schedId, { enabled });
+    state.accounts = await fetchAccounts();
+    const account = state.accounts.find((a) => a.id === accountId);
+    if (account) renderAccountSchedulesInline(account);
+  } catch (e) {
+    alert(`Erro: ${e.message}`);
+  }
+}
+
+function inlineEditSchedule(accountId, schedId) {
+  const account = state.accounts.find((a) => a.id === accountId);
+  const sched = (account?.schedules || []).find((s) => s.id === schedId);
+  if (!sched) return;
+  state.editingScheduleId = schedId;
+  $('scheduleInlineCron').value = sched.cron;
+  $('scheduleInlineDescription').value = sched.description || '';
+  $('scheduleInlineEnabled').checked = sched.enabled ?? true;
+  $('scheduleInlineForm').hidden = false;
+  $('scheduleInlineCron').focus();
+}
+
+async function inlineDeleteSchedule(accountId, schedId) {
+  if (!confirm('Deletar este agendamento?')) return;
+  try {
+    await deleteSchedule(accountId, schedId);
+    state.accounts = await fetchAccounts();
+    const account = state.accounts.find((a) => a.id === accountId);
+    if (account) renderAccountSchedulesInline(account);
+  } catch (e) {
+    alert(`Erro: ${e.message}`);
+  }
+}
+
+async function handleScheduleInlineSave() {
+  const accountId = $('accountFormId').value;
+  if (!accountId) return;
+  const cronValue = $('scheduleInlineCron').value.trim();
+  if (!/^(\S+\s+){4}\S+$/.test(cronValue)) {
+    alert('Expressão cron inválida. Use 5 campos, ex: "0 7 * * 1-5".');
+    $('scheduleInlineCron').focus();
+    return;
+  }
   const data = {
     cron: cronValue,
-    description: $('scheduleDescription').value,
-    enabled: $('scheduleEnabled').checked,
+    description: $('scheduleInlineDescription').value,
+    enabled: $('scheduleInlineEnabled').checked,
   };
   try {
-    if (schedId) {
-      await updateScheduleApi(editAccountId, schedId, data);
+    if (state.editingScheduleId) {
+      await updateScheduleApi(accountId, state.editingScheduleId, data);
     } else {
       await createSchedule(accountId, data);
     }
-    closeModal('scheduleModal');
-    await loadAll();
+    state.accounts = await fetchAccounts();
+    const account = state.accounts.find((a) => a.id === accountId);
+    if (account) renderAccountSchedulesInline(account);
+    hideScheduleInlineForm();
   } catch (e) {
-    alert(`Error: ${e.message}`);
-  }
-}
-
-async function toggleScheduleEnabled(accountId, schedId, enabled) {
-  try {
-    await updateScheduleApi(accountId, schedId, { enabled });
-    await loadAll();
-  } catch (e) {
-    alert(`Error: ${e.message}`);
-  }
-}
-
-async function confirmDeleteSchedule(accountId, schedId) {
-  if (!confirm('Delete this schedule?')) return;
-  try {
-    await deleteSchedule(accountId, schedId);
-    await loadAll();
-  } catch (e) {
-    alert(`Error: ${e.message}`);
+    alert(`Erro: ${e.message}`);
   }
 }
 
@@ -710,11 +714,6 @@ function initEventListeners() {
   $('accountModalCloseBtn').addEventListener('click', () => closeModal('accountModal'));
   $('accountModal').querySelector('.modal__backdrop').addEventListener('click', () => closeModal('accountModal'));
   $('accountCancelBtn').addEventListener('click', () => closeModal('accountModal'));
-
-  // Schedule modal
-  $('scheduleModalCloseBtn').addEventListener('click', () => closeModal('scheduleModal'));
-  $('scheduleModal').querySelector('.modal__backdrop').addEventListener('click', () => closeModal('scheduleModal'));
-  $('scheduleCancelBtn').addEventListener('click', () => closeModal('scheduleModal'));
 
   // Keyboard
   document.addEventListener('keydown', (e) => {
@@ -736,7 +735,18 @@ function initEventListeners() {
   // Forms
   $('addAccountBtn').addEventListener('click', () => showAccountModal());
   $('accountForm').addEventListener('submit', handleAccountSubmit);
-  $('scheduleForm').addEventListener('submit', handleScheduleSubmit);
+
+  // Inline schedule form
+  $('addScheduleInlineBtn').addEventListener('click', () => {
+    state.editingScheduleId = null;
+    $('scheduleInlineCron').value = '';
+    $('scheduleInlineDescription').value = '';
+    $('scheduleInlineEnabled').checked = true;
+    $('scheduleInlineForm').hidden = false;
+    $('scheduleInlineCron').focus();
+  });
+  $('scheduleInlineCancel').addEventListener('click', hideScheduleInlineForm);
+  $('scheduleInlineSave').addEventListener('click', handleScheduleInlineSave);
 
   // Holiday modal
   $('newHolidayBtn').addEventListener('click', () => showHolidayModal());

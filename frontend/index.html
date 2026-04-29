@@ -59,21 +59,6 @@
         <div id="accountStatusCards" class="accounts-list"></div>
       </section>
 
-      <!-- Schedules section -->
-      <section class="sidebar-section">
-        <div class="sidebar-section__head">
-          <span class="sidebar-section__title">Schedules</span>
-          <button class="add-btn" onclick="showScheduleModal()">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Add
-          </button>
-        </div>
-        <div id="schedulesList" class="schedules-list"></div>
-      </section>
-
       <!-- Holidays section (admin-only) -->
       <section id="holidaysSection" class="sidebar-section" hidden>
         <div class="sidebar-section__head">
@@ -250,63 +235,32 @@
             </label>
           </div>
 
+          <fieldset id="accountSchedulesSection" class="modal__schedules">
+            <legend>Agendamentos</legend>
+            <p id="accountSchedulesEmptyHint" class="hint" hidden>
+              Salve a conta primeiro para configurar agendamentos.
+            </p>
+            <ul id="accountSchedulesList" class="schedules-inline"></ul>
+            <button type="button" id="addScheduleInlineBtn" class="btn btn--small">+ Novo agendamento</button>
+
+            <div id="scheduleInlineForm" class="schedule-inline-form" hidden>
+              <input type="text" id="scheduleInlineCron" class="form-input form-input--mono" placeholder="0 8 * * 1-5" required />
+              <input type="text" id="scheduleInlineDescription" class="form-input" placeholder="Descrição" />
+              <label class="toggle-label">
+                <input type="checkbox" id="scheduleInlineEnabled" checked />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="toggle-text">Ativo</span>
+              </label>
+              <div class="actions">
+                <button type="button" id="scheduleInlineCancel" class="btn btn--ghost">Cancelar</button>
+                <button type="button" id="scheduleInlineSave" class="btn btn--primary">Salvar agendamento</button>
+              </div>
+            </div>
+          </fieldset>
+
           <div class="form-actions">
             <button type="button" id="accountCancelBtn" class="btn btn--ghost">Cancel</button>
             <button type="submit" class="btn btn--primary">Save Account</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ═══════════════════════════════════
-       SCHEDULE MODAL
-  ════════════════════════════════════ -->
-  <div id="scheduleModal" class="modal">
-    <div class="modal__backdrop"></div>
-    <div class="modal__box">
-      <div class="modal__header">
-        <h3 id="scheduleModalTitle" class="modal__title">New Schedule</h3>
-        <button id="scheduleModalCloseBtn" class="icon-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-      <div class="modal__body">
-        <form id="scheduleForm" class="form">
-          <input type="hidden" id="scheduleFormAccountId" />
-          <input type="hidden" id="scheduleFormId" />
-
-          <div class="form-field">
-            <label class="form-label">Account</label>
-            <select id="scheduleAccountSelect" class="form-input" required></select>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label">Cron Expression</label>
-            <input type="text" id="scheduleCron" class="form-input form-input--mono" placeholder="0 7 * * 1-5" required />
-            <span class="form-hint">e.g. <code>0 7 * * 1-5</code> = Mon–Fri at 7:00 am</span>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label">Description <span class="form-label-hint">optional</span></label>
-            <input type="text" id="scheduleDescription" class="form-input" placeholder="Weekdays at 7 am" />
-          </div>
-
-          <div class="form-field">
-            <label class="toggle-label">
-              <input type="checkbox" id="scheduleEnabled" checked />
-              <span class="toggle-track"><span class="toggle-thumb"></span></span>
-              <span class="toggle-text">Schedule active</span>
-            </label>
-          </div>
-
-          <div class="form-actions">
-            <button type="button" id="scheduleCancelBtn" class="btn btn--ghost">Cancel</button>
-            <button type="submit" class="btn btn--primary">Save Schedule</button>
           </div>
         </form>
       </div>
