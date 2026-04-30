@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2034  # TEMPORARY: config vars consumed in Tasks 4-10; remove after Task 10
 # Auto Issue Resolver — runs nightly via cron, opens 1 PR per open issue.
 # See docs/superpowers/specs/2026-04-30-cron-issue-resolver-design.md
 set -euo pipefail
@@ -224,14 +223,78 @@ main() {
     return 0
   fi
 
-  echo "$issues_json" | jq -c '.[]' | while read -r issue_data; do
-    local n title
+  local pr_count=0 fail_count=0 skip_count=0
+
+  # Read into array first so we don't run the loop body in a subshell
+  local issue_lines=()
+  while IFS= read -r line; do
+    issue_lines+=("$line")
+  done < <(echo "$issues_json" | jq -c '.[]')
+
+  for issue_data in "${issue_lines[@]}"; do
+    local n title b
     n="$(echo "$issue_data" | jq -r '.number')"
     title="$(echo "$issue_data" | jq -r '.title')"
+    b="auto/issue-$n"
+
     log "--- Issue #$n: \"$title\" ---"
+
+    if branch_exists "$b"; then
+      log "Branch $b already exists (local or remote), skipping #$n"
+      skip_count=$((skip_count + 1))
+      continue
+    fi
+
+    # Fetch full issue context
+    local issue_full body comments
+    issue_full="$(fetch_issue_full "$n")"
+    body="$(echo "$issue_full" | jq -r '.body // ""')"
+    comments="$(echo "$issue_full" | format_comments)"
+
+    if ! create_branch "$b"; then
+      fail_issue "$n" "$b" "git checkout -b $b failed"
+      fail_count=$((fail_count + 1))
+      continue
+    fi
+    log "Branch created: $b"
+
+    if [[ "$DRY_RUN" == "1" ]]; then
+      log "DRY_RUN=1: skipping claude invocation, push, PR, and issue comment for #$n"
+      cleanup_branch "$b"
+      continue
+    fi
+
+    # Export prompt-template variables
+    export ISSUE_NUMBER="$n"
+    export ISSUE_TITLE="$title"
+    export ISSUE_BODY="$body"
+    export ISSUE_COMMENTS_FORMATTED="$comments"
+    export BRANCH_NAME="$b"
+
+    invoke_claude "$n"
+
+    if ! parse_claude_result; then
+      fail_issue "$n" "$b" "$PARSE_REASON"
+      fail_count=$((fail_count + 1))
+      rm -f "$CLAUDE_STDOUT"
+      continue
+    fi
+
+    log "Claude exit=0, status=ok, summary=\"$PARSE_SUMMARY\""
+
+    if ! success_open_pr "$n" "$title" "$b" "$PARSE_SUMMARY"; then
+      fail_issue "$n" "$b" "$PARSE_REASON"
+      fail_count=$((fail_count + 1))
+      rm -f "$CLAUDE_STDOUT"
+      continue
+    fi
+
+    pr_count=$((pr_count + 1))
+    git checkout main >/dev/null 2>&1
+    rm -f "$CLAUDE_STDOUT"
   done
 
-  log "=== Run finished (selection only) ==="
+  log "=== Run finished: $pr_count PR(s) opened, $fail_count failure(s), $skip_count skipped ==="
 }
 
 # Run main only when executed (not sourced)
