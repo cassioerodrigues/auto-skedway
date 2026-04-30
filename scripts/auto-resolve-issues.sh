@@ -67,6 +67,28 @@ format_comments() {
   '
 }
 
+branch_exists() {
+  local b="$1"
+  if git rev-parse --verify "$b" >/dev/null 2>&1; then
+    return 0
+  fi
+  if git ls-remote --heads origin "$b" 2>/dev/null | grep -q "refs/heads/$b\$"; then
+    return 0
+  fi
+  return 1
+}
+
+create_branch() {
+  local b="$1"
+  git checkout -b "$b" main >/dev/null 2>&1
+}
+
+cleanup_branch() {
+  local b="$1"
+  git checkout main >/dev/null 2>&1 || true
+  git branch -D "$b" >/dev/null 2>&1 || true
+}
+
 # --- Main entry point ---
 main() {
   cd "$WORKDIR"
@@ -94,4 +116,7 @@ main() {
   log "=== Run finished (selection only) ==="
 }
 
-main "$@"
+# Run main only when executed (not sourced)
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
