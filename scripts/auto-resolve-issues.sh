@@ -102,6 +102,28 @@ fail_issue() {
   cleanup_branch "$b"
 }
 
+# Render the prompt template and invoke claude -p, capturing stdout/stderr.
+# Sets globals: CLAUDE_EXIT, CLAUDE_STDOUT (path to file), CLAUDE_STDERR (path to file)
+# Required env: ISSUE_NUMBER, ISSUE_TITLE, ISSUE_BODY, ISSUE_COMMENTS_FORMATTED, BRANCH_NAME
+invoke_claude() {
+  local n="$1"
+  CLAUDE_STDOUT="$(mktemp)"
+  CLAUDE_STDERR="$WORKDIR/logs/cron-issue-$n-$DATE.stderr"
+
+  log "Invoking claude (model=$MODEL_PLAN, timeout=$CLAUDE_TIMEOUT)"
+  set +e
+  # shellcheck disable=SC2016  # single-quoted list is intentional envsubst filter syntax
+  envsubst '$ISSUE_NUMBER $ISSUE_TITLE $ISSUE_BODY $ISSUE_COMMENTS_FORMATTED $BRANCH_NAME' \
+    < "$PROMPT_TEMPLATE" \
+    | timeout "$CLAUDE_TIMEOUT" "$CLAUDE_BIN" -p \
+        --model "$MODEL_PLAN" \
+        --add-dir "$WORKDIR" \
+        --dangerously-skip-permissions \
+        > "$CLAUDE_STDOUT" 2> "$CLAUDE_STDERR"
+  CLAUDE_EXIT=$?
+  set -e
+}
+
 # --- Main entry point ---
 main() {
   cd "$WORKDIR"
