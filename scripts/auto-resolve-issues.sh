@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2034  # config vars consumed in later tasks
+# shellcheck disable=SC2034  # TEMPORARY: config vars consumed in Tasks 4-10; remove after Task 10
 # Auto Issue Resolver — runs nightly via cron, opens 1 PR per open issue.
 # See docs/superpowers/specs/2026-04-30-cron-issue-resolver-design.md
 set -euo pipefail
@@ -26,7 +26,8 @@ log() {
 }
 
 abort() {
-  log "ABORT: $*"
+  log "ABORT: $*" || echo "[ABORT] $*" >&2
+  echo "[ABORT] $*" >&2
   exit 1
 }
 
