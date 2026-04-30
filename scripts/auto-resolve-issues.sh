@@ -172,6 +172,41 @@ parse_claude_result() {
   return 0
 }
 
+# On success: push branch, open PR, comment on issue.
+# Args: issue_number, issue_title, branch_name, summary
+# Returns 0 on success, non-zero on push or PR-create failure.
+# On failure, sets PARSE_REASON for the caller to use with fail_issue.
+success_open_pr() {
+  local n="$1" title="$2" b="$3" summary="$4"
+
+  if ! git push -u origin "$b" >>"$CLAUDE_STDERR" 2>&1; then
+    PARSE_REASON="git push failed (see $CLAUDE_STDERR)"
+    return 1
+  fi
+
+  local pr_body
+  pr_body="Auto-resolver opened this PR for issue #$n.
+
+$summary
+
+Closes #$n"
+
+  local pr_url
+  if ! pr_url="$("$GH_BIN" pr create --repo "$REPO" --base main --head "$b" \
+        --title "fix: $title (#$n)" \
+        --body "$pr_body" 2>>"$CLAUDE_STDERR")"; then
+    PARSE_REASON="gh pr create failed; remote branch left in place (see $CLAUDE_STDERR)"
+    return 1
+  fi
+
+  "$GH_BIN" issue comment "$n" --repo "$REPO" \
+    --body "Auto-resolver opened $pr_url" >/dev/null 2>&1 || \
+    log "WARN: gh issue comment failed for #$n (PR was created at $pr_url)"
+
+  log "Pushed $b, opened $pr_url, commented on issue #$n"
+  return 0
+}
+
 # --- Main entry point ---
 main() {
   cd "$WORKDIR"
