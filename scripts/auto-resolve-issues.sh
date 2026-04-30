@@ -47,13 +47,51 @@ preflight() {
   log "Pre-flight ok (on main, clean, up to date)"
 }
 
+# --- Issue fetching ---
+fetch_open_issues() {
+  "$GH_BIN" issue list --repo "$REPO" --state open --limit "$MAX_ISSUES" \
+    --json number,title --search "sort:created-asc"
+}
+
+fetch_issue_full() {
+  local n="$1"
+  "$GH_BIN" issue view "$n" --repo "$REPO" --json title,body,comments
+}
+
+format_comments() {
+  jq -r '
+    if (.comments | length) == 0
+    then "(no comments)"
+    else (.comments | map("--- @\(.author.login) em \(.createdAt) ---\n\(.body)\n") | join("\n"))
+    end
+  '
+}
+
 # --- Main entry point ---
 main() {
   cd "$WORKDIR"
   rotate_logs
   log "=== Run started (DRY_RUN=$DRY_RUN) ==="
   preflight
-  log "=== Run finished (pre-flight only) ==="
+
+  local issues_json count
+  issues_json="$(fetch_open_issues)"
+  count="$(echo "$issues_json" | jq 'length')"
+  log "Fetched $count open issue(s) to process"
+
+  if [[ "$count" -eq 0 ]]; then
+    log "=== No issues to process; run finished ==="
+    return 0
+  fi
+
+  echo "$issues_json" | jq -c '.[]' | while read -r issue_data; do
+    local n title
+    n="$(echo "$issue_data" | jq -r '.number')"
+    title="$(echo "$issue_data" | jq -r '.title')"
+    log "--- Issue #$n: \"$title\" ---"
+  done
+
+  log "=== Run finished (selection only) ==="
 }
 
 main "$@"
