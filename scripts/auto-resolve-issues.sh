@@ -124,6 +124,54 @@ invoke_claude() {
   set -e
 }
 
+# Parse the last-line JSON sentinel from CLAUDE_STDOUT and verify a commit was made.
+# Returns 0 on success (success path can proceed); non-zero on any failure.
+# On failure, sets PARSE_REASON.
+# On success, sets PARSE_SUMMARY.
+parse_claude_result() {
+  # shellcheck disable=SC2034
+  PARSE_REASON=""
+  # shellcheck disable=SC2034
+  PARSE_SUMMARY=""
+
+  if [[ "$CLAUDE_EXIT" -eq 124 ]]; then
+    # shellcheck disable=SC2034
+    PARSE_REASON="Timed out after $CLAUDE_TIMEOUT (see $CLAUDE_STDERR)"
+    return 1
+  fi
+  if [[ "$CLAUDE_EXIT" -ne 0 ]]; then
+    # shellcheck disable=SC2034
+    PARSE_REASON="Claude exited with code $CLAUDE_EXIT (see $CLAUDE_STDERR)"
+    return 1
+  fi
+
+  local last_line status
+  last_line="$(tail -n 1 "$CLAUDE_STDOUT")"
+  status="$(echo "$last_line" | jq -r '.status // "missing"' 2>/dev/null || echo "missing")"
+
+  if [[ "$status" == "missing" ]]; then
+    # shellcheck disable=SC2034
+    PARSE_REASON="Could not parse JSON sentinel from final line of stdout"
+    return 1
+  fi
+  if [[ "$status" != "ok" ]]; then
+    # shellcheck disable=SC2034
+    PARSE_REASON="$(echo "$last_line" | jq -r '.reason // "no reason given"' 2>/dev/null || echo "unknown")"
+    return 1
+  fi
+
+  # Verify a commit was made on the current branch
+  if [[ "$(git rev-parse HEAD)" == "$(git rev-parse main)" ]]; then
+    # shellcheck disable=SC2034
+    PARSE_REASON="Claude reported ok but no commit was made"
+    return 1
+  fi
+
+  # shellcheck disable=SC2034
+  PARSE_SUMMARY="$(echo "$last_line" | jq -r '.summary // "no summary"')"
+  return 0
+}
+
 # --- Main entry point ---
 main() {
   cd "$WORKDIR"
