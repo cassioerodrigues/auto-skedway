@@ -109,7 +109,7 @@ async function loadAll() {
     renderExecutions(executions);
     populateAccountFilter(accounts);
     await pollStatus();
-    if (state.isAdmin) await loadHolidays();
+    await loadHolidays();
   } catch (e) {
     console.error('Load error:', e);
   }
@@ -234,16 +234,15 @@ let _pollTimer = null;
 let _detailsPollTimer = null;
 
 function applyAdminVisibility() {
-  const section = $('holidaysSection');
+  const addBtn = $('newHolidayBtn');
   if (state.isAdmin) {
-    section.removeAttribute('hidden');
+    addBtn.removeAttribute('hidden');
   } else {
-    section.setAttribute('hidden', '');
+    addBtn.setAttribute('hidden', '');
   }
 }
 
 async function loadHolidays() {
-  if (!state.isAdmin) return;
   try {
     const data = await fetchHolidays();
     state.holidays = data.holidays || [];
@@ -261,16 +260,11 @@ function renderHolidaysList() {
     </div>`;
     return;
   }
-  list.innerHTML = state.holidays.map((h) => {
+  const sorted = [...state.holidays].sort((a, b) => a.date.localeCompare(b.date));
+  list.innerHTML = sorted.map((h) => {
     const dateParts = h.date.split('-');
     const dateFormatted = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-    return `
-    <div class="sched-row">
-      <div class="sched-row__dot" style="background:var(--blue)"></div>
-      <div class="sched-row__body">
-        <div class="sched-row__name" title="${h.description}">${h.description}</div>
-        <div class="sched-row__cron">${dateFormatted}</div>
-      </div>
+    const actions = state.isAdmin ? `
       <div class="sched-row__actions">
         <button class="icon-action" onclick="showHolidayModal(${JSON.stringify(h).replace(/"/g, '&quot;')})" title="Editar">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -283,7 +277,14 @@ function renderHolidaysList() {
             <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
           </svg>
         </button>
-      </div>
+      </div>` : '';
+    return `
+    <div class="sched-row">
+      <div class="sched-row__dot" style="background:var(--blue)"></div>
+      <div class="sched-row__body">
+        <div class="sched-row__name" title="${h.description}">${h.description}</div>
+        <div class="sched-row__cron">${dateFormatted}</div>
+      </div>${actions}
     </div>`;
   }).join('');
 }
@@ -291,15 +292,26 @@ function renderHolidaysList() {
 function showHolidayModal(holiday = null) {
   state.holidayFormId = holiday?.id || null;
   $('holidayModalTitle').textContent = holiday ? 'Editar Feriado' : 'Novo Feriado';
-  $('holidayDate').value = holiday?.date || '';
+  if (holiday?.date) {
+    const [y, m, d] = holiday.date.split('-');
+    $('holidayDate').value = `${d}/${m}/${y}`;
+  } else {
+    $('holidayDate').value = '';
+  }
   $('holidayDescription').value = holiday?.description || '';
   $('holidayModal').classList.add('open');
 }
 
 async function handleHolidaySubmit(e) {
   e.preventDefault();
+  const raw = $('holidayDate').value.trim();
+  const m = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) {
+    alert('Data inválida. Use o formato dd/mm/aaaa');
+    return;
+  }
   const data = {
-    date: $('holidayDate').value,
+    date: `${m[3]}-${m[2]}-${m[1]}`,
     description: $('holidayDescription').value,
   };
   try {
@@ -604,20 +616,20 @@ function renderAccountSchedulesInline(account) {
         <span class="schedules-inline__cron">${s.cron}</span>
       </div>
       <div class="schedules-inline__actions">
-        <button class="icon-action" onclick="inlineToggleSchedule('${account.id}','${s.id}',${!s.enabled})" title="${s.enabled ? 'Desativar' : 'Ativar'}">
+        <button type="button" class="icon-action" onclick="inlineToggleSchedule('${account.id}','${s.id}',${!s.enabled})" title="${s.enabled ? 'Desativar' : 'Ativar'}">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             ${s.enabled
               ? '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>'
               : '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'}
           </svg>
         </button>
-        <button class="icon-action" onclick="inlineEditSchedule('${account.id}','${s.id}')" title="Editar">
+        <button type="button" class="icon-action" onclick="inlineEditSchedule('${account.id}','${s.id}')" title="Editar">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
-        <button class="icon-action icon-action--danger" onclick="inlineDeleteSchedule('${account.id}','${s.id}')" title="Deletar">
+        <button type="button" class="icon-action icon-action--danger" onclick="inlineDeleteSchedule('${account.id}','${s.id}')" title="Deletar">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
           </svg>
@@ -754,6 +766,14 @@ function initEventListeners() {
   $('holidayModal').querySelector('.modal__backdrop').addEventListener('click', () => closeModal('holidayModal'));
   $('holidayCancelBtn').addEventListener('click', () => closeModal('holidayModal'));
   $('holidayForm').addEventListener('submit', handleHolidaySubmit);
+
+  if (window.flatpickr) {
+    flatpickr('#holidayDate', {
+      dateFormat: 'd/m/Y',
+      allowInput: true,
+      locale: (flatpickr.l10ns && flatpickr.l10ns.pt) || 'default',
+    });
+  }
 }
 
 // ─── Boot ────────────────────────────────────────────────────
