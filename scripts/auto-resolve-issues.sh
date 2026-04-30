@@ -89,6 +89,19 @@ cleanup_branch() {
   git branch -D "$b" >/dev/null 2>&1 || true
 }
 
+# Comment on the issue with the failure reason and clean up the local branch.
+# Usage: fail_issue <issue_number> <branch_name> <reason_string>
+fail_issue() {
+  local n="$1" b="$2" reason="$3"
+  log "FAIL #$n: $reason"
+  if [[ "$DRY_RUN" != "1" ]]; then
+    "$GH_BIN" issue comment "$n" --repo "$REPO" \
+      --body "Auto-resolver could not complete this issue: $reason" \
+      >/dev/null 2>&1 || log "WARN: gh issue comment failed for #$n"
+  fi
+  cleanup_branch "$b"
+}
+
 # --- Main entry point ---
 main() {
   cd "$WORKDIR"
