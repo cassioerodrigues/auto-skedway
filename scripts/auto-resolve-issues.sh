@@ -36,12 +36,24 @@ rotate_logs() {
   find "$WORKDIR/logs" -name 'cron-issue*' -mtime "+$LOG_RETENTION_DAYS" -delete 2>/dev/null || true
 }
 
-# --- Main entry point (filled in later tasks) ---
+# --- Pre-flight checks ---
+preflight() {
+  cd "$WORKDIR"
+  git checkout main >/dev/null 2>&1 || abort "git checkout main failed"
+  git pull --ff-only origin main >/dev/null 2>&1 || abort "git pull --ff-only failed (non-FF or network error)"
+  if [[ -n "$(git status --porcelain)" ]]; then
+    abort "dirty working tree on main — refusing to run"
+  fi
+  log "Pre-flight ok (on main, clean, up to date)"
+}
+
+# --- Main entry point ---
 main() {
   cd "$WORKDIR"
   rotate_logs
   log "=== Run started (DRY_RUN=$DRY_RUN) ==="
-  log "=== Run finished (skeleton only) ==="
+  preflight
+  log "=== Run finished (pre-flight only) ==="
 }
 
 main "$@"
