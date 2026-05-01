@@ -13,4 +13,11 @@ venv/
 dist/
 build/
 accounts.json.lock
+accounts.json
+holidays.json
 .claude/
+
+# Local environment scripts (not tracked)
+/deploy.sh
+/start.sh
+/stop.sh
