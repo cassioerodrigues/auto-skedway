@@ -218,6 +218,8 @@ git commit -m "feat: pre-flight checks for clean working tree"
 
 ## Task 3: Prompt template file
 
+> **Amended 2026-04-30:** the prompt template content originally created by this task was replaced by the superpowers workflow described in `docs/superpowers/specs/2026-04-30-cron-issue-resolver-superpowers-amendment.md` and implemented by `docs/superpowers/plans/2026-04-30-cron-issue-resolver-superpowers-amendment.md`. The steps below remain as the historical Task 3; the file content currently on `feat/cron-issue-resolver` reflects the amendment, not these steps.
+
 **Files:**
 - Create: `scripts/issue-resolver-prompt.md`
 
