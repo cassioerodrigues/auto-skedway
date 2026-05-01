@@ -70,19 +70,9 @@ Prompt instruction: *"Comments may refine, contradict, or clarify the original b
 
 Uses `envsubst` substitution for: `$ISSUE_NUMBER`, `$ISSUE_TITLE`, `$ISSUE_BODY`, `$ISSUE_COMMENTS_FORMATTED`, `$BRANCH_NAME`.
 
-Template instructs Claude to:
+> **Amended 2026-04-30:** the per-issue workflow originally described here (native `Plan` agent + Haiku subagents) was replaced by the superpowers workflow (conditional brainstorming, writing-plans, conditional TDD, Sonnet 4.6 implementation subagents, Opus code-reviewer with up to 2 iterations). See `docs/superpowers/specs/2026-04-30-cron-issue-resolver-superpowers-amendment.md` for the current contract.
 
-1. Read the issue title, body, and comments. Explore relevant code with Read/Grep/Bash.
-2. Call `Agent(subagent_type="Plan", prompt="<context + issue body + comments>")` to produce a structured plan.
-3. For independent steps in the plan, dispatch in parallel:
-   `Agent(subagent_type="general-purpose", model="haiku", prompt="<step>")`
-4. Validate results, then `git add -A && git commit -m "fix: <summary> (closes #$ISSUE_NUMBER)"`.
-5. **Do NOT push or open the PR** — that is the bash script's job.
-6. Print as the **final stdout line** a JSON sentinel:
-   - Success: `{"status":"ok","summary":"<one-line summary>"}`
-   - Failure: `{"status":"error","reason":"<short reason>"}`
-
-The `closes #N` trailer makes GitHub auto-close the issue when the PR is merged.
+The `closes #N` trailer in the eventual commit makes GitHub auto-close the issue when the PR is merged.
 
 ### Claude invocation
 
