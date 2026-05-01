@@ -256,7 +256,7 @@ function renderHolidaysList() {
   const list = $('holidaysList');
   if (!state.holidays.length) {
     list.innerHTML = `<div class="empty-state" style="padding:20px 10px">
-      <span style="font-size:11px">Nenhum feriado cadastrado.</span>
+      <span style="font-size:11px">No holidays registered.</span>
     </div>`;
     return;
   }
@@ -266,13 +266,13 @@ function renderHolidaysList() {
     const dateFormatted = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
     const actions = state.isAdmin ? `
       <div class="sched-row__actions">
-        <button class="icon-action" onclick="showHolidayModal(${JSON.stringify(h).replace(/"/g, '&quot;')})" title="Editar">
+        <button class="icon-action" onclick="showHolidayModal(${JSON.stringify(h).replace(/"/g, '&quot;')})" title="Edit">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
-        <button class="icon-action icon-action--danger" onclick="confirmDeleteHoliday('${h.id}')" title="Deletar">
+        <button class="icon-action icon-action--danger" onclick="confirmDeleteHoliday('${h.id}')" title="Delete">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
           </svg>
@@ -291,7 +291,7 @@ function renderHolidaysList() {
 
 function showHolidayModal(holiday = null) {
   state.holidayFormId = holiday?.id || null;
-  $('holidayModalTitle').textContent = holiday ? 'Editar Feriado' : 'Novo Feriado';
+  $('holidayModalTitle').textContent = holiday ? 'Edit Holiday' : 'New Holiday';
   if (holiday?.date) {
     const [y, m, d] = holiday.date.split('-');
     $('holidayDate').value = `${d}/${m}/${y}`;
@@ -307,7 +307,7 @@ async function handleHolidaySubmit(e) {
   const raw = $('holidayDate').value.trim();
   const m = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (!m) {
-    alert('Data inválida. Use o formato dd/mm/aaaa');
+    alert('Invalid date. Use dd/mm/yyyy format');
     return;
   }
   const data = {
@@ -325,24 +325,24 @@ async function handleHolidaySubmit(e) {
   } catch (err) {
     const msg = err.message || '';
     if (msg === 'forbidden' || msg.includes('HTTP 403')) {
-      alert('Apenas o admin pode editar feriados');
+      alert('Only admins can edit holidays');
     } else if (msg.includes('already exists')) {
-      alert('Já existe um feriado nessa data');
+      alert('A holiday already exists on that date');
     } else if (msg.toLowerCase().includes('past') || msg.toLowerCase().includes('invalid date') || msg.includes('HTTP 400')) {
-      alert('Data inválida (não pode ser passada)');
+      alert('Invalid date (cannot be in the past)');
     } else {
-      alert(`Erro: ${msg}`);
+      alert(`Error: ${msg}`);
     }
   }
 }
 
 async function confirmDeleteHoliday(id) {
-  if (!confirm('Deletar este feriado?')) return;
+  if (!confirm('Delete this holiday?')) return;
   try {
     await deleteHoliday(id);
     await loadHolidays();
   } catch (e) {
-    alert(`Erro: ${e.message}`);
+    alert(`Error: ${e.message}`);
   }
 }
 
@@ -605,7 +605,7 @@ function renderAccountSchedulesInline(account) {
   const list = $('accountSchedulesList');
   const schedules = account.schedules || [];
   if (!schedules.length) {
-    list.innerHTML = `<li class="schedules-inline__empty">Nenhum agendamento ainda.</li>`;
+    list.innerHTML = `<li class="schedules-inline__empty">No schedules yet.</li>`;
     return;
   }
   list.innerHTML = schedules.map((s) => `
@@ -616,20 +616,20 @@ function renderAccountSchedulesInline(account) {
         <span class="schedules-inline__cron">${s.cron}</span>
       </div>
       <div class="schedules-inline__actions">
-        <button type="button" class="icon-action" onclick="inlineToggleSchedule('${account.id}','${s.id}',${!s.enabled})" title="${s.enabled ? 'Desativar' : 'Ativar'}">
+        <button type="button" class="icon-action" onclick="inlineToggleSchedule('${account.id}','${s.id}',${!s.enabled})" title="${s.enabled ? 'Disable' : 'Enable'}">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             ${s.enabled
               ? '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>'
               : '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'}
           </svg>
         </button>
-        <button type="button" class="icon-action" onclick="inlineEditSchedule('${account.id}','${s.id}')" title="Editar">
+        <button type="button" class="icon-action" onclick="inlineEditSchedule('${account.id}','${s.id}')" title="Edit">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
-        <button type="button" class="icon-action icon-action--danger" onclick="inlineDeleteSchedule('${account.id}','${s.id}')" title="Deletar">
+        <button type="button" class="icon-action icon-action--danger" onclick="inlineDeleteSchedule('${account.id}','${s.id}')" title="Delete">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
           </svg>
@@ -654,7 +654,7 @@ async function inlineToggleSchedule(accountId, schedId, enabled) {
     const account = state.accounts.find((a) => a.id === accountId);
     if (account) renderAccountSchedulesInline(account);
   } catch (e) {
-    alert(`Erro: ${e.message}`);
+    alert(`Error: ${e.message}`);
   }
 }
 
@@ -671,14 +671,14 @@ function inlineEditSchedule(accountId, schedId) {
 }
 
 async function inlineDeleteSchedule(accountId, schedId) {
-  if (!confirm('Deletar este agendamento?')) return;
+  if (!confirm('Delete this schedule?')) return;
   try {
     await deleteSchedule(accountId, schedId);
     state.accounts = await fetchAccounts();
     const account = state.accounts.find((a) => a.id === accountId);
     if (account) renderAccountSchedulesInline(account);
   } catch (e) {
-    alert(`Erro: ${e.message}`);
+    alert(`Error: ${e.message}`);
   }
 }
 
@@ -687,7 +687,7 @@ async function handleScheduleInlineSave() {
   if (!accountId) return;
   const cronValue = $('scheduleInlineCron').value.trim();
   if (!/^(\S+\s+){4}\S+$/.test(cronValue)) {
-    alert('Expressão cron inválida. Use 5 campos, ex: "0 7 * * 1-5".');
+    alert('Invalid cron expression. Use 5 fields, e.g. "0 7 * * 1-5".');
     $('scheduleInlineCron').focus();
     return;
   }
@@ -707,7 +707,7 @@ async function handleScheduleInlineSave() {
     if (account) renderAccountSchedulesInline(account);
     hideScheduleInlineForm();
   } catch (e) {
-    alert(`Erro: ${e.message}`);
+    alert(`Error: ${e.message}`);
   }
 }
 
@@ -771,7 +771,6 @@ function initEventListeners() {
     flatpickr('#holidayDate', {
       dateFormat: 'd/m/Y',
       allowInput: true,
-      locale: (flatpickr.l10ns && flatpickr.l10ns.pt) || 'default',
     });
   }
 }
