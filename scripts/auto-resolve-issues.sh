@@ -114,7 +114,7 @@ invoke_claude() {
   # shellcheck disable=SC2016  # single-quoted list is intentional envsubst filter syntax
   envsubst '$ISSUE_NUMBER $ISSUE_TITLE $ISSUE_BODY $ISSUE_COMMENTS_FORMATTED $BRANCH_NAME' \
     < "$PROMPT_TEMPLATE" \
-    | timeout "$CLAUDE_TIMEOUT" "$CLAUDE_BIN" -p \
+    | IS_SANDBOX=1 timeout "$CLAUDE_TIMEOUT" "$CLAUDE_BIN" -p \
         --model "$MODEL_PLAN" \
         --add-dir "$WORKDIR" \
         --dangerously-skip-permissions \
