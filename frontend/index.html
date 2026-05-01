@@ -10,7 +10,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" />
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/pt.js"></script>
   <script>
     const currentPath = window.location.pathname;
     const isSubpath = currentPath.startsWith('/skedway/');
@@ -65,8 +64,8 @@
       <!-- Holidays section (read-only for users, full CRUD for admin) -->
       <section id="holidaysSection" class="sidebar-section">
         <div class="sidebar-section__head">
-          <span class="sidebar-section__title">Feriados</span>
-          <button id="newHolidayBtn" class="add-btn">
+          <span class="sidebar-section__title">Holidays</span>
+          <button id="newHolidayBtn" class="add-btn" hidden>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -239,24 +238,24 @@
           </div>
 
           <fieldset id="accountSchedulesSection" class="modal__schedules">
-            <legend>Agendamentos</legend>
+            <legend>Schedules</legend>
             <p id="accountSchedulesEmptyHint" class="hint" hidden>
-              Salve a conta primeiro para configurar agendamentos.
+              Save the account first to configure schedules.
             </p>
             <ul id="accountSchedulesList" class="schedules-inline"></ul>
-            <button type="button" id="addScheduleInlineBtn" class="btn btn--small">+ Novo agendamento</button>
+            <button type="button" id="addScheduleInlineBtn" class="btn btn--small">+ New schedule</button>
 
             <div id="scheduleInlineForm" class="schedule-inline-form" hidden>
               <input type="text" id="scheduleInlineCron" class="form-input form-input--mono" placeholder="0 8 * * 1-5" />
-              <input type="text" id="scheduleInlineDescription" class="form-input" placeholder="Descrição" />
+              <input type="text" id="scheduleInlineDescription" class="form-input" placeholder="Description" />
               <label class="toggle-label">
                 <input type="checkbox" id="scheduleInlineEnabled" checked />
                 <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                <span class="toggle-text">Ativo</span>
+                <span class="toggle-text">Active</span>
               </label>
               <div class="actions">
-                <button type="button" id="scheduleInlineCancel" class="btn btn--ghost">Cancelar</button>
-                <button type="button" id="scheduleInlineSave" class="btn btn--primary">Salvar agendamento</button>
+                <button type="button" id="scheduleInlineCancel" class="btn btn--ghost">Cancel</button>
+                <button type="button" id="scheduleInlineSave" class="btn btn--primary">Save schedule</button>
               </div>
             </div>
           </fieldset>
@@ -277,7 +276,7 @@
     <div class="modal__backdrop"></div>
     <div class="modal__box">
       <div class="modal__header">
-        <h3 id="holidayModalTitle" class="modal__title">Novo Feriado</h3>
+        <h3 id="holidayModalTitle" class="modal__title">New Holiday</h3>
         <button id="holidayModalCloseBtn" class="icon-btn">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -288,16 +287,16 @@
       <div class="modal__body">
         <form id="holidayForm" class="form">
           <div class="form-field">
-            <label class="form-label">Data</label>
-            <input type="text" id="holidayDate" class="form-input" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}" inputmode="numeric" maxlength="10" required />
+            <label class="form-label">Date</label>
+            <input type="text" id="holidayDate" class="form-input" placeholder="dd/mm/yyyy" pattern="\d{2}/\d{2}/\d{4}" inputmode="numeric" maxlength="10" required />
           </div>
           <div class="form-field">
-            <label class="form-label">Descrição</label>
-            <input type="text" id="holidayDescription" class="form-input" placeholder="Ex: Natal" required />
+            <label class="form-label">Description</label>
+            <input type="text" id="holidayDescription" class="form-input" placeholder="e.g. Christmas" required />
           </div>
           <div class="form-actions">
-            <button type="button" id="holidayCancelBtn" class="btn btn--ghost">Cancelar</button>
-            <button type="submit" class="btn btn--primary">Salvar</button>
+            <button type="button" id="holidayCancelBtn" class="btn btn--ghost">Cancel</button>
+            <button type="submit" class="btn btn--primary">Save</button>
           </div>
         </form>
       </div>
