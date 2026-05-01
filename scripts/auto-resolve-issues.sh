@@ -98,6 +98,11 @@ fail_issue() {
       --body "Auto-resolver could not complete this issue: $reason" \
       >/dev/null 2>&1 || log "WARN: gh issue comment failed for #$n"
   fi
+  # Discard anything Claude left behind so the next preflight does not abort
+  # with "dirty working tree". Untracked plan/spec dirs first, then any
+  # tracked-but-uncommitted edits on the failed branch (about to be deleted).
+  git clean -fd docs/superpowers/specs docs/superpowers/plans >/dev/null 2>&1 || true
+  git checkout -- . >/dev/null 2>&1 || true
   cleanup_branch "$b"
 }
 
@@ -106,8 +111,13 @@ fail_issue() {
 # Required env: ISSUE_NUMBER, ISSUE_TITLE, ISSUE_BODY, ISSUE_COMMENTS_FORMATTED, BRANCH_NAME
 invoke_claude() {
   local n="$1"
-  CLAUDE_STDOUT="$(mktemp)"
-  CLAUDE_STDERR="$WORKDIR/logs/cron-issue-$n-$DATE.stderr"
+  local ts
+  ts="$(date +%H%M%S)"
+  # Per-attempt timestamped paths so retries within a day don't truncate
+  # each other's output. Both files are kept regardless of exit status —
+  # rotate_logs prunes them after LOG_RETENTION_DAYS.
+  CLAUDE_STDOUT="$WORKDIR/logs/cron-issue-$n-$DATE-$ts.stdout"
+  CLAUDE_STDERR="$WORKDIR/logs/cron-issue-$n-$DATE-$ts.stderr"
 
   log "Invoking claude (model=$MODEL_PLAN, timeout=$CLAUDE_TIMEOUT)"
   set +e
@@ -276,7 +286,6 @@ main() {
     if ! parse_claude_result; then
       fail_issue "$n" "$b" "$PARSE_REASON"
       fail_count=$((fail_count + 1))
-      rm -f "$CLAUDE_STDOUT"
       continue
     fi
 
@@ -285,13 +294,11 @@ main() {
     if ! success_open_pr "$n" "$title" "$b" "$PARSE_SUMMARY"; then
       fail_issue "$n" "$b" "$PARSE_REASON"
       fail_count=$((fail_count + 1))
-      rm -f "$CLAUDE_STDOUT"
       continue
     fi
 
     pr_count=$((pr_count + 1))
     git checkout main >/dev/null 2>&1
-    rm -f "$CLAUDE_STDOUT"
   done
 
   log "=== Run finished: $pr_count PR(s) opened, $fail_count failure(s), $skip_count skipped ==="
